@@ -173,6 +173,29 @@
           Versuch einreichen – {{ disciplineLabel(submitDialog.disciplineKey) }}
         </v-card-title>
         <v-card-text>
+          <!-- Remaining attempts banner -->
+          <v-progress-linear v-if="submitDialog.loadingInfo" indeterminate class="mb-3" />
+          <template v-else-if="submitDialog.remainingAttempts !== null">
+            <v-alert
+              v-if="submitDialog.remainingAttempts === 0"
+              type="warning"
+              variant="tonal"
+              density="compact"
+              class="mb-3"
+            >
+              Keine Versuche mehr verfügbar ({{ submitDialog.maxAttempts }}/{{ submitDialog.maxAttempts }} verbraucht).
+            </v-alert>
+            <v-alert
+              v-else
+              type="info"
+              variant="tonal"
+              density="compact"
+              class="mb-3"
+            >
+              {{ submitDialog.remainingAttempts }} von {{ submitDialog.maxAttempts }} Versuch{{ submitDialog.maxAttempts === 1 ? '' : 'en' }} verbleibend
+            </v-alert>
+          </template>
+
           <v-text-field
             v-model.number="submitDialog.value"
             :label="inputLabel(submitDialog.disciplineKey)"
@@ -182,6 +205,7 @@
             :max="inputMax(submitDialog.disciplineKey)"
             variant="outlined"
             density="comfortable"
+            :disabled="submitDialog.remainingAttempts === 0"
             autofocus
           />
 
@@ -192,6 +216,7 @@
             inline
             label="Fuss"
             class="mt-2"
+            :disabled="submitDialog.remainingAttempts === 0"
           >
             <v-radio label="Links" value="Left" />
             <v-radio label="Rechts" value="Right" />
@@ -203,7 +228,7 @@
           <v-btn
             color="primary"
             :loading="submitDialog.saving"
-            :disabled="!isSubmitValid"
+            :disabled="!isSubmitValid || submitDialog.remainingAttempts === 0"
             @click="submitAttempt"
           >
             Einreichen
@@ -219,6 +244,7 @@ import { ref, computed } from 'vue';
 import { useRequest } from 'alova/client';
 import {
   getOverview,
+  getDisciplineInfo,
   submitCoreStrength,
   submitMedicineBallPush,
   submitStandingLongJump,
@@ -291,20 +317,37 @@ const submitDialog = ref({
   value: null as number | null,
   foot: 'Left' as 'Left' | 'Right',
   saving: false,
+  loadingInfo: false,
+  remainingAttempts: null as number | null,
+  maxAttempts: null as number | null,
 });
 
-function openSubmitDialog(disciplineKey: string): void {
+async function openSubmitDialog(disciplineKey: string): Promise<void> {
   submitDialog.value = {
     open: true,
     disciplineKey,
     value: null,
     foot: 'Left',
     saving: false,
+    loadingInfo: true,
+    remainingAttempts: null,
+    maxAttempts: null,
   };
+  try {
+    const info = await getDisciplineInfo(disciplineKey).send();
+    submitDialog.value.remainingAttempts = info.remainingAttempts;
+    submitDialog.value.maxAttempts = info.maxAllowedAttempts;
+  } catch {
+    // Non-critical: just hide the banner if it fails
+    submitDialog.value.remainingAttempts = null;
+  } finally {
+    submitDialog.value.loadingInfo = false;
+  }
 }
 
 const isSubmitValid = computed(() => {
-  const { disciplineKey, value, foot } = submitDialog.value;
+  const { disciplineKey, value, foot, loadingInfo } = submitDialog.value;
+  if (loadingInfo) return false;
   if (value === null || isNaN(value)) return false;
   if (disciplineKey === 'OneLegStand' && !foot) return false;
   const d = disciplines.find((dd) => dd.key === disciplineKey);

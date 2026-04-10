@@ -45,6 +45,13 @@ export const setAnnotation = (
 
 export const getOverview = () => fitnessCheckAlova.Get<YearOverview[]>('overview');
 
+/** Fetches remaining-attempt info for a single discipline. The discipline key
+ *  maps to a camelCase URL segment (e.g. "CoreStrength" → "coreStrength"). */
+export const getDisciplineInfo = (disciplineKey: string) => {
+  const route = disciplineKey.charAt(0).toLowerCase() + disciplineKey.slice(1);
+  return fitnessCheckAlova.Get<{ remainingAttempts: number; maxAllowedAttempts: number }>(route);
+};
+
 // ── Student attempt submission ───────────────────────────────────────────────
 
 export const submitCoreStrength = (resultInSeconds: number) =>
