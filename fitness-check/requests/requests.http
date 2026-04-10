@@ -1,0 +1,79 @@
+@baseUrl = http://localhost:8008
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6IjA4ZGNmODE1LWVkMjgtNDU4OC04NDM0LTMxYzNiOTg0NmYzZCIsInN1YiI6IjA4ZGNmODE1LWVkMjgtNDU4OC04NDM0LTMxYzNiOTg0NmYzZCIsImp0aSI6Ijk5NjJkYmNlIiwidXBuIjoiYXZpbGxpZ2VyQG9ubGluZS5naWJ6LmNoIiwiYXVkIjpbImh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCIsImh0dHBzOi8vbG9jYWxob3N0OjcwODAiXSwibmJmIjoxNzYwNDU2NDQzLCJleHAiOjE3Njg0MDUyNDMsImlhdCI6MTc2MDQ1NjQ0MywiaXNzIjoiZG90bmV0LXVzZXItand0cyJ9.h2ntUssMxxm_2chyIH6CDBR6YfZ2TnJWd56VwRj6NCw
+
+@year = 2024
+
+### Get overview
+GET {{baseUrl}}/v2/overview
+Authorization: Bearer {{token}}
+
+### Generate initial best attempt entries
+POST {{baseUrl}}/v2/bestAttemptInit/generate-initial-best-attempts
+
+
+
+### Get current CORE STRENGTH attempts
+GET {{baseUrl}}/v2/coreStrength
+Authorization: Bearer {{token}}
+
+
+
+### Get CORE STRENGTH attempts for {{year}}
+GET {{baseUrl}}/v2/coreStrength?schoolYear={{year}}
+Authorization: Bearer {{token}}
+
+### Get MEDICINE BALL PUSH attempts for {{year}}
+GET {{baseUrl}}/v2/medicineBallPush?schoolYear={{year}}
+Authorization: Bearer {{token}}
+
+### Get ONE LEG STAND attempts for {{year}}
+GET {{baseUrl}}/v2/oneLegStand?schoolYear={{year}}
+Authorization: Bearer {{token}}
+
+### Get SHUTTLE RUN attempts for {{year}}
+GET {{baseUrl}}/v2/shuttleRun?schoolYear={{year}}
+Authorization: Bearer {{token}}
+
+### Get STANDING LONG JUMP attempts for {{year}}
+GET {{baseUrl}}/v2/standingLongJump?schoolYear={{year}}
+Authorization: Bearer {{token}}
+
+### Get TWELVE MINUTES RUN attempts for {{year}}
+GET {{baseUrl}}/v2/twelveMinutesRun?schoolYear={{year}}
+Authorization: Bearer {{token}}
+
+
+### Create new CORE STRENGTH attempt
+// @name createCoreStrengthAttempt
+POST {{baseUrl}}/v2/coreStrength
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "resultInSeconds": 146
+}
+
+### Create new MEDICINE BALL PUSH attempt
+// @name createMedicineBallPushAttempt
+POST {{baseUrl}}/v2/medicineBallPush
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "resultInCentimeters": 489
+}
+
+
+### Delete latest CORE STRENGTH attempt
+DELETE {{baseUrl}}/v2/coreStrength/{{createCoreStrengthAttempt.response.body.$.id}}
+Authorization: Bearer {{token}}
+
+### Delete latest CORE STRENGTH attempt
+//DELETE {{baseUrl}}/v2/medicineBallPush/{{createMedicineBallPushAttempt.response.body.$.id}}
+DELETE {{baseUrl}}/v2/medicineBallPush/08de0b6c-1596-4a5e-885e-235e92145180
+Authorization: Bearer {{token}}
+
+
+### Get discipline configuration: CoreStrength
+GET {{baseUrl}}/v2/discipline-configuration?discipline=CoreStrength
+Authorization: Bearer {{token}}
