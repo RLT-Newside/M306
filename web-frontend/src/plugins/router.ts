@@ -39,6 +39,7 @@ const ManualRequestGeneration = () => import('@/pages/profilePicture/ManualReque
 const DevelopmentSender = () => import('@/pages/pushNotification/DevelopmentSender.vue');
 const DevTools = () => import('@/pages/DevTools.vue');
 const SportsTestLeaderboard = () => import('@/pages/sportsTest/leaderboard.vue');
+const SportsTestClassOverview = () => import('@/pages/sportsTest/Class.vue');
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -274,6 +275,12 @@ const routes: Array<RouteRecordRaw> = [
     path: '/sports-test/leaderboard',
     name: 'Sports Test Leaderboard',
     component: SportsTestLeaderboard,
+    meta: { requiresAuthentication: true, requiredRole: 'physicalEducationTeacher' },
+  },
+  {
+    path: '/sports-test/class-overview',
+    name: 'Sports Test Class Overview',
+    component: SportsTestClassOverview,
     meta: { requiresAuthentication: true, requiredRole: 'physicalEducationTeacher' },
   },
   {

@@ -1,4 +1,41 @@
 import type { Leaderboard } from '@/models/sportsTest/leaderboard';
+import type { ClassOverview, CohortInfo } from '@/models/sportsTest/classOverview';
 import { fitnessCheckAlova } from '../alova';
 
+// ── Leaderboard ──────────────────────────────────────────────────────────────
+
 export const getLeaderboard = () => fitnessCheckAlova.Get<Leaderboard>('leaderboard');
+
+// ── Class overview ───────────────────────────────────────────────────────────
+
+export const getCohorts = () => fitnessCheckAlova.Get<CohortInfo[]>('classOverview/cohorts');
+
+export const getClassOverview = (cohortId: string) =>
+  fitnessCheckAlova.Get<ClassOverview>(`classOverview/${cohortId}`);
+
+export const setResult = (
+  cohortId: string,
+  userId: string,
+  discipline: string,
+  body: { result: number; gender: string }
+) =>
+  fitnessCheckAlova.Put(
+    `classOverview/${cohortId}/students/${userId}/disciplines/${discipline}`,
+    JSON.stringify(body)
+  );
+
+export const deleteResult = (cohortId: string, userId: string, discipline: string) =>
+  fitnessCheckAlova.Delete(
+    `classOverview/${cohortId}/students/${userId}/disciplines/${discipline}`
+  );
+
+export const setAnnotation = (
+  cohortId: string,
+  userId: string,
+  discipline: string,
+  annotation: string
+) =>
+  fitnessCheckAlova.Put(
+    `classOverview/${cohortId}/students/${userId}/disciplines/${discipline}/annotation`,
+    JSON.stringify({ annotation })
+  );

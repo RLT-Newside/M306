@@ -144,6 +144,13 @@
           title="Globale Bestenliste"
           value="sportsTestLeaderboard"
         />
+
+        <v-list-item
+          router-link
+          :to="{ name: 'Sports Test Class Overview' }"
+          title="Klassenübersicht"
+          value="sportsTestClassOverview"
+        />
       </v-list-group>
 
       <v-list-group v-if="userRoles.includes('developer')">

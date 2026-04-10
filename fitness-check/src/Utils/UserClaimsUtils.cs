@@ -29,6 +29,20 @@ public static class UserClaimsUtils
     }
 
     /// <summary>
+    /// Extracts the first name from the claims principal (given_name claim).
+    /// Returns an empty string when the claim is absent.
+    /// </summary>
+    public static string GetFirstName(ClaimsPrincipal user) =>
+        user.FindFirstValue(ClaimTypes.GivenName) ?? string.Empty;
+
+    /// <summary>
+    /// Extracts the last name from the claims principal (family_name / surname claim).
+    /// Returns an empty string when the claim is absent.
+    /// </summary>
+    public static string GetLastName(ClaimsPrincipal user) =>
+        user.FindFirstValue(ClaimTypes.Surname) ?? string.Empty;
+
+    /// <summary>
     /// Extracts the username from the claims principal (using UPN claim).
     /// </summary>
     /// <param name="user">The claims principal.</param>
