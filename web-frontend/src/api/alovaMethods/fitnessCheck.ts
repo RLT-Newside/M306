@@ -1,5 +1,6 @@
 import type { Leaderboard } from '@/models/sportsTest/leaderboard';
 import type { ClassOverview, CohortInfo } from '@/models/sportsTest/classOverview';
+import type { YearOverview } from '@/models/sportsTest/myResults';
 import { fitnessCheckAlova } from '../alova';
 
 // ── Leaderboard ──────────────────────────────────────────────────────────────
@@ -39,3 +40,27 @@ export const setAnnotation = (
     `classOverview/${cohortId}/students/${userId}/disciplines/${discipline}/annotation`,
     JSON.stringify({ annotation })
   );
+
+// ── Student overview ─────────────────────────────────────────────────────────
+
+export const getOverview = () => fitnessCheckAlova.Get<YearOverview[]>('overview');
+
+// ── Student attempt submission ───────────────────────────────────────────────
+
+export const submitCoreStrength = (resultInSeconds: number) =>
+  fitnessCheckAlova.Post('coreStrength', JSON.stringify({ resultInSeconds }));
+
+export const submitMedicineBallPush = (resultInCentimeters: number) =>
+  fitnessCheckAlova.Post('medicineBallPush', JSON.stringify({ resultInCentimeters }));
+
+export const submitStandingLongJump = (resultInCentimeters: number) =>
+  fitnessCheckAlova.Post('standingLongJump', JSON.stringify({ resultInCentimeters }));
+
+export const submitShuttleRun = (resultInMilliseconds: number) =>
+  fitnessCheckAlova.Post('shuttleRun', JSON.stringify({ resultInMilliseconds }));
+
+export const submitTwelveMinutesRun = (resultInRounds: number) =>
+  fitnessCheckAlova.Post('twelveMinutesRun', JSON.stringify({ resultInRounds }));
+
+export const submitOneLegStand = (resultInSeconds: number, foot: 'Left' | 'Right') =>
+  fitnessCheckAlova.Post('oneLegStand', JSON.stringify({ resultInSeconds, foot }));

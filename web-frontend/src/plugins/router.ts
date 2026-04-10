@@ -40,6 +40,7 @@ const DevelopmentSender = () => import('@/pages/pushNotification/DevelopmentSend
 const DevTools = () => import('@/pages/DevTools.vue');
 const SportsTestLeaderboard = () => import('@/pages/sportsTest/leaderboard.vue');
 const SportsTestClassOverview = () => import('@/pages/sportsTest/Class.vue');
+const SportsTestMyResults = () => import('@/pages/sportsTest/MyResults.vue');
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -282,6 +283,12 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Sports Test Class Overview',
     component: SportsTestClassOverview,
     meta: { requiresAuthentication: true, requiredRole: 'physicalEducationTeacher' },
+  },
+  {
+    path: '/sports-test/my-results',
+    name: 'Sports Test My Results',
+    component: SportsTestMyResults,
+    meta: { requiresAuthentication: true },
   },
   {
     path: '/:pathMatch(.*)*',

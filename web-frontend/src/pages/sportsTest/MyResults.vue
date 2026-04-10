@@ -1,0 +1,412 @@
+<template>
+  <v-container>
+    <!-- ── Header ─────────────────────────────────────────────── -->
+    <v-row>
+      <v-col cols="12">
+        <h1 class="text-h3">Mein Fitnesstest</h1>
+      </v-col>
+    </v-row>
+
+    <!-- ── Loading / error ───────────────────────────────────── -->
+    <v-row v-if="overviewLoading">
+      <v-col class="text-center py-10">
+        <v-progress-circular indeterminate color="primary" />
+      </v-col>
+    </v-row>
+
+    <v-row v-else-if="overviewError">
+      <v-col>
+        <v-alert type="error" variant="tonal">
+          Deine Ergebnisse konnten nicht geladen werden.
+        </v-alert>
+      </v-col>
+    </v-row>
+
+    <template v-else-if="overview && overview.length > 0">
+      <!-- ── Year tabs ───────────────────────────────────────── -->
+      <v-row v-if="overview.length > 1">
+        <v-col>
+          <v-tabs v-model="selectedYear" color="primary">
+            <v-tab
+              v-for="y in sortedYears"
+              :key="y.schoolYear"
+              :value="y.schoolYear"
+            >
+              {{ y.schoolYear }}/{{ String(y.schoolYear + 1).slice(-2) }}
+              <v-chip
+                v-if="y.rating"
+                size="x-small"
+                :color="ratingColor(y.rating)"
+                variant="tonal"
+                class="ml-2"
+              >
+                {{ y.rating }}
+              </v-chip>
+            </v-tab>
+          </v-tabs>
+        </v-col>
+      </v-row>
+
+      <template v-if="currentYearData">
+        <!-- ── Summary card ───────────────────────────────────── -->
+        <v-row class="mt-2">
+          <v-col cols="12" sm="6" md="4">
+            <v-card variant="tonal" :color="currentYearData.rating ? ratingColor(currentYearData.rating) : 'primary'">
+              <v-card-text>
+                <div class="text-caption text-uppercase mb-1">
+                  {{ currentYearData.cohort?.classNameVocationalEducation ?? '–' }}
+                  <span v-if="currentYearData.cohort">
+                    · {{ currentYearData.schoolYear }}/{{ String(currentYearData.schoolYear + 1).slice(-2) }}
+                  </span>
+                </div>
+                <div class="d-flex align-center gap-4">
+                  <div>
+                    <div class="text-h4 font-weight-bold">
+                      {{ currentYearData.totalPoints ?? '–' }}
+                    </div>
+                    <div class="text-caption">∑ Punkte</div>
+                  </div>
+                  <v-divider vertical class="mx-3" />
+                  <div>
+                    <div class="text-h4 font-weight-bold">
+                      {{ currentYearData.averagePoints?.toFixed(1) ?? '–' }}
+                    </div>
+                    <div class="text-caption">⌀ Punkte</div>
+                  </div>
+                  <v-divider vertical class="mx-3" />
+                  <div>
+                    <v-chip
+                      v-if="currentYearData.rating"
+                      size="large"
+                      :color="ratingColor(currentYearData.rating)"
+                      variant="flat"
+                    >
+                      {{ currentYearData.rating }}
+                    </v-chip>
+                    <span v-else class="text-h5">–</span>
+                    <div class="text-caption mt-1">Note</div>
+                  </div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <!-- ── Disciplines table ──────────────────────────────── -->
+        <v-row class="mt-2">
+          <v-col>
+            <v-card>
+              <v-card-text class="pa-0">
+                <v-table>
+                  <thead>
+                    <tr>
+                      <th class="text-left">Disziplin</th>
+                      <th class="text-right">Bestes Ergebnis</th>
+                      <th class="text-right">Punkte</th>
+                      <th class="text-right">Datum</th>
+                      <th class="text-center" style="width: 60px"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="d in disciplines" :key="d.key">
+                      <td class="font-weight-medium">{{ d.label }}</td>
+                      <td class="text-right">
+                        <template v-if="getBestAttempt(d.key)">
+                          <span class="font-weight-bold text-primary">
+                            {{ formatResult(d.key, getBestAttempt(d.key)!.result) }}
+                          </span>
+                          <template v-if="d.key === 'OneLegStand' && getBestAttempt(d.key)!.leftFootResult !== null">
+                            <div class="text-caption text-medium-emphasis">
+                              L: {{ getBestAttempt(d.key)!.leftFootResult }} Sek. /
+                              R: {{ getBestAttempt(d.key)!.rightFootResult }} Sek.
+                            </div>
+                          </template>
+                        </template>
+                        <span v-else class="text-caption text-medium-emphasis">–</span>
+                      </td>
+                      <td class="text-right">
+                        <span v-if="getBestAttempt(d.key)" class="font-weight-medium">
+                          {{ getBestAttempt(d.key)!.points }} Pkt.
+                        </span>
+                        <span v-else class="text-caption text-medium-emphasis">–</span>
+                      </td>
+                      <td class="text-right text-caption text-medium-emphasis">
+                        {{ getBestAttempt(d.key) ? formatDate(getBestAttempt(d.key)!.momentUtc) : '–' }}
+                      </td>
+                      <td class="text-center">
+                        <v-btn
+                          v-if="isCurrentYear"
+                          size="small"
+                          icon
+                          variant="text"
+                          color="primary"
+                          @click="openSubmitDialog(d.key)"
+                        >
+                          <v-icon>mdi-plus</v-icon>
+                        </v-btn>
+                      </td>
+                    </tr>
+                  </tbody>
+                </v-table>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+      </template>
+    </template>
+
+    <!-- ── Empty state ─────────────────────────────────────────── -->
+    <v-row v-else-if="overview && overview.length === 0">
+      <v-col class="text-center py-10">
+        <v-icon size="48" color="medium-emphasis">mdi-clipboard-text-outline</v-icon>
+        <p class="text-medium-emphasis mt-2">Noch keine Ergebnisse vorhanden.</p>
+        <v-btn color="primary" class="mt-4" @click="openSubmitDialog(disciplines[0].key)">
+          Ersten Versuch einreichen
+        </v-btn>
+      </v-col>
+    </v-row>
+
+    <!-- ── Submit dialog ───────────────────────────────────────── -->
+    <v-dialog v-model="submitDialog.open" max-width="440">
+      <v-card>
+        <v-card-title>
+          Versuch einreichen – {{ disciplineLabel(submitDialog.disciplineKey) }}
+        </v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model.number="submitDialog.value"
+            :label="inputLabel(submitDialog.disciplineKey)"
+            type="number"
+            :step="inputStep(submitDialog.disciplineKey)"
+            :min="inputMin(submitDialog.disciplineKey)"
+            :max="inputMax(submitDialog.disciplineKey)"
+            variant="outlined"
+            density="comfortable"
+            autofocus
+          />
+
+          <!-- Foot selector for OneLegStand -->
+          <v-radio-group
+            v-if="submitDialog.disciplineKey === 'OneLegStand'"
+            v-model="submitDialog.foot"
+            inline
+            label="Fuss"
+            class="mt-2"
+          >
+            <v-radio label="Links" value="Left" />
+            <v-radio label="Rechts" value="Right" />
+          </v-radio-group>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="submitDialog.open = false">Abbrechen</v-btn>
+          <v-btn
+            color="primary"
+            :loading="submitDialog.saving"
+            :disabled="!isSubmitValid"
+            @click="submitAttempt"
+          >
+            Einreichen
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-container>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import { useRequest } from 'alova/client';
+import {
+  getOverview,
+  submitCoreStrength,
+  submitMedicineBallPush,
+  submitStandingLongJump,
+  submitShuttleRun,
+  submitTwelveMinutesRun,
+  submitOneLegStand,
+} from '@/api/alovaMethods/fitnessCheck';
+import type { BestAttemptResult } from '@/models/sportsTest/myResults';
+import { useNotifications } from '@/composables/useNotifications';
+import { getHttpErrorData } from '@/api/httpError';
+import { useNotificationStore } from '@/stores/notification';
+
+const { showSuccess, showError } = useNotifications();
+const notificationStore = useNotificationStore();
+
+// ── Disciplines config ──────────────────────────────────────────
+interface DisciplineConfig {
+  key: string;
+  label: string;
+  inputLabel: string;
+  step: number;
+  min: number;
+  max: number;
+}
+
+const disciplines: DisciplineConfig[] = [
+  { key: 'CoreStrength',      label: 'Rumpfkraft',       inputLabel: 'Sekunden (0–360)',         step: 1,    min: 0,   max: 360  },
+  { key: 'MedicineBallPush',  label: 'Medizinballstoss', inputLabel: 'Zentimeter (250–1000)',    step: 1,    min: 250, max: 1000 },
+  { key: 'StandingLongJump',  label: 'Standweitsprung',  inputLabel: 'Zentimeter (50–350)',      step: 1,    min: 50,  max: 350  },
+  { key: 'ShuttleRun',        label: 'Pendellauf',        inputLabel: 'Sekunden (7.00–15.00)',    step: 0.01, min: 7,   max: 15   },
+  { key: 'TwelveMinutesRun',  label: '12-Minutenlauf',   inputLabel: 'Runden (16–55)',           step: 0.5,  min: 16,  max: 55   },
+  { key: 'OneLegStand',       label: 'Einbeinstand',      inputLabel: 'Sekunden (0–120)',         step: 1,    min: 0,   max: 120  },
+];
+
+// ── Overview loading ────────────────────────────────────────────
+const {
+  data: overview,
+  loading: overviewLoading,
+  error: overviewError,
+  send: reloadOverview,
+} = useRequest(getOverview());
+
+const selectedYear = ref<number | null>(null);
+
+const sortedYears = computed(() =>
+  (overview.value ?? []).slice().sort((a, b) => b.schoolYear - a.schoolYear)
+);
+
+const currentYearData = computed(() => {
+  if (!overview.value || overview.value.length === 0) return null;
+  const year = selectedYear.value ?? sortedYears.value[0]?.schoolYear;
+  return overview.value.find((y) => y.schoolYear === year) ?? sortedYears.value[0] ?? null;
+});
+
+const isCurrentYear = computed(() => {
+  if (!currentYearData.value) return false;
+  const now = new Date();
+  const currentSchoolYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+  return currentYearData.value.schoolYear === currentSchoolYear;
+});
+
+function getBestAttempt(disciplineKey: string): BestAttemptResult | undefined {
+  return currentYearData.value?.bestAttempts.find((a) => a.discipline === disciplineKey);
+}
+
+// ── Submit dialog ───────────────────────────────────────────────
+const submitDialog = ref({
+  open: false,
+  disciplineKey: '',
+  value: null as number | null,
+  foot: 'Left' as 'Left' | 'Right',
+  saving: false,
+});
+
+function openSubmitDialog(disciplineKey: string): void {
+  submitDialog.value = {
+    open: true,
+    disciplineKey,
+    value: null,
+    foot: 'Left',
+    saving: false,
+  };
+}
+
+const isSubmitValid = computed(() => {
+  const { disciplineKey, value, foot } = submitDialog.value;
+  if (value === null || isNaN(value)) return false;
+  if (disciplineKey === 'OneLegStand' && !foot) return false;
+  const d = disciplines.find((dd) => dd.key === disciplineKey);
+  if (!d) return false;
+  return value >= d.min && value <= d.max;
+});
+
+async function submitAttempt(): Promise<void> {
+  const { disciplineKey, value, foot } = submitDialog.value;
+  if (value === null) return;
+
+  submitDialog.value.saving = true;
+  try {
+    switch (disciplineKey) {
+      case 'CoreStrength':
+        await submitCoreStrength(value).send();
+        break;
+      case 'MedicineBallPush':
+        await submitMedicineBallPush(value).send();
+        break;
+      case 'StandingLongJump':
+        await submitStandingLongJump(value).send();
+        break;
+      case 'ShuttleRun':
+        await submitShuttleRun(Math.round(value * 1000)).send();
+        break;
+      case 'TwelveMinutesRun':
+        await submitTwelveMinutesRun(value).send();
+        break;
+      case 'OneLegStand':
+        await submitOneLegStand(value, foot).send();
+        break;
+    }
+    showSuccess('Versuch wurde gespeichert.');
+    submitDialog.value.open = false;
+    await reloadOverview();
+  } catch (err) {
+    const status = (err as { status?: number })?.status;
+    if (status === 400) {
+      const msg = getHttpErrorData<string>(err);
+      notificationStore.showWarning(msg ?? 'Ungültige Eingabe.');
+    } else {
+      showError(err, {
+        notFound: 'Disziplin nicht gefunden.',
+        forbidden: 'Keine Berechtigung.',
+        conflict: 'Konflikt beim Speichern.',
+        fallback: 'Versuch konnte nicht gespeichert werden.',
+      });
+    }
+  } finally {
+    submitDialog.value.saving = false;
+  }
+}
+
+// ── Helpers ─────────────────────────────────────────────────────
+function disciplineLabel(key: string): string {
+  return disciplines.find((d) => d.key === key)?.label ?? key;
+}
+
+function inputLabel(key: string): string {
+  return disciplines.find((d) => d.key === key)?.inputLabel ?? 'Wert';
+}
+
+function inputStep(key: string): number {
+  return disciplines.find((d) => d.key === key)?.step ?? 1;
+}
+
+function inputMin(key: string): number {
+  return disciplines.find((d) => d.key === key)?.min ?? 0;
+}
+
+function inputMax(key: string): number {
+  return disciplines.find((d) => d.key === key)?.max ?? 9999;
+}
+
+function formatResult(disciplineKey: string, result: number): string {
+  switch (disciplineKey) {
+    case 'CoreStrength':
+    case 'OneLegStand':
+      return `${result} Sek.`;
+    case 'MedicineBallPush':
+    case 'StandingLongJump':
+      return `${result} cm`;
+    case 'ShuttleRun':
+      return `${(result / 1000).toFixed(2)} Sek.`;
+    case 'TwelveMinutesRun':
+      return `${result} Rd.`;
+    default:
+      return String(result);
+  }
+}
+
+function formatDate(isoDate: string): string {
+  return new Date(isoDate).toLocaleDateString('de-CH', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
+function ratingColor(rating: string): string {
+  const map: Record<string, string> = { UED: 'green', UEE: 'blue', EE: 'orange', TE: 'red' };
+  return map[rating] ?? 'grey';
+}
+</script>
