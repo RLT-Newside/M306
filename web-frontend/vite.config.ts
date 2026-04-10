@@ -26,6 +26,11 @@ export default defineConfig({
         xfwd: true,
         followRedirects: false,
       },
+      '/v2': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
   resolve: {

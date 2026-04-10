@@ -129,6 +129,23 @@
         />
       </v-list-group>
 
+      <v-list-group v-if="userRoles.includes('physicalEducationTeacher')">
+        <template #activator="{ props }">
+          <v-list-item
+            v-bind="props"
+            title="Fitnesstest"
+            value="sportsTest"
+          />
+        </template>
+
+        <v-list-item
+          router-link
+          :to="{ name: 'Sports Test Leaderboard' }"
+          title="Globale Bestenliste"
+          value="sportsTestLeaderboard"
+        />
+      </v-list-group>
+
       <v-list-group v-if="userRoles.includes('developer')">
         <template #activator="{ props }">
           <v-list-item

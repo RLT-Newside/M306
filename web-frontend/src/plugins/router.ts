@@ -38,6 +38,7 @@ const ProfilePictureRequest = () => import('@/pages/profilePicture/ProfilePictur
 const ManualRequestGeneration = () => import('@/pages/profilePicture/ManualRequestGeneration.vue');
 const DevelopmentSender = () => import('@/pages/pushNotification/DevelopmentSender.vue');
 const DevTools = () => import('@/pages/DevTools.vue');
+const SportsTestLeaderboard = () => import('@/pages/sportsTest/leaderboard.vue');
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -268,6 +269,12 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Developer Tools',
     component: DevTools,
     meta: { requiresAuthentication: true, requiredRole: 'developer' },
+  },
+  {
+    path: '/sports-test/leaderboard',
+    name: 'Sports Test Leaderboard',
+    component: SportsTestLeaderboard,
+    meta: { requiresAuthentication: true, requiredRole: 'physicalEducationTeacher' },
   },
   {
     path: '/:pathMatch(.*)*',
