@@ -149,22 +149,104 @@
                   </tbody>
                 </v-table>
               </v-card-text>
+
+              <!-- Empty state inside the card when current year has no attempts -->
+              <v-card-text
+                v-if="isCurrentYear && currentYearData?.bestAttempts.length === 0"
+                class="text-center py-6"
+              >
+                <v-icon size="36" color="medium-emphasis">mdi-clipboard-text-outline</v-icon>
+                <p class="text-medium-emphasis mt-2 mb-4">
+                  Noch keine Versuche in diesem Schuljahr.
+                </p>
+                <v-btn color="primary" @click="openSubmitDialog(disciplines[0].key)">
+                  Ersten Versuch einreichen
+                </v-btn>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <!-- ── Year comparison ────────────────────────────────── -->
+        <v-row v-if="sortedYears.length > 1" class="mt-2">
+          <v-col>
+            <v-card>
+              <v-card-title class="text-subtitle-1 font-weight-medium py-3 px-4">
+                Jahresvergleich
+              </v-card-title>
+              <v-card-text class="pa-0">
+                <div style="overflow-x: auto">
+                  <v-table density="compact">
+                    <thead>
+                      <tr>
+                        <th class="text-left">Disziplin</th>
+                        <th
+                          v-for="y in sortedYears"
+                          :key="y.schoolYear"
+                          class="text-right year-col"
+                        >
+                          {{ y.schoolYear }}/{{ String(y.schoolYear + 1).slice(-2) }}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="d in disciplines" :key="d.key">
+                        <td class="text-caption font-weight-medium">{{ d.label }}</td>
+                        <td
+                          v-for="y in sortedYears"
+                          :key="y.schoolYear"
+                          class="text-right year-col"
+                        >
+                          <template v-if="y.bestAttempts.find(a => a.discipline === d.key)">
+                            <div class="text-caption font-weight-bold text-primary">
+                              {{ formatResult(d.key, y.bestAttempts.find(a => a.discipline === d.key)!.result) }}
+                            </div>
+                            <div class="text-caption text-medium-emphasis">
+                              {{ y.bestAttempts.find(a => a.discipline === d.key)!.points }} Pkt.
+                            </div>
+                          </template>
+                          <span v-else class="text-caption text-medium-emphasis">–</span>
+                        </td>
+                      </tr>
+
+                      <!-- Summary rows -->
+                      <tr class="year-summary-row">
+                        <td class="text-caption text-uppercase text-medium-emphasis">∑ Punkte</td>
+                        <td
+                          v-for="y in sortedYears"
+                          :key="y.schoolYear"
+                          class="text-right year-col text-caption font-weight-bold"
+                        >
+                          {{ y.totalPoints ?? '–' }}
+                        </td>
+                      </tr>
+                      <tr class="year-summary-row">
+                        <td class="text-caption text-uppercase text-medium-emphasis">Note</td>
+                        <td
+                          v-for="y in sortedYears"
+                          :key="y.schoolYear"
+                          class="text-right year-col"
+                        >
+                          <v-chip
+                            v-if="y.rating"
+                            size="x-small"
+                            :color="ratingColor(y.rating)"
+                            variant="tonal"
+                          >
+                            {{ y.rating }}
+                          </v-chip>
+                          <span v-else class="text-caption text-medium-emphasis">–</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </v-table>
+                </div>
+              </v-card-text>
             </v-card>
           </v-col>
         </v-row>
       </template>
     </template>
-
-    <!-- ── Empty state ─────────────────────────────────────────── -->
-    <v-row v-else-if="overview && overview.length === 0">
-      <v-col class="text-center py-10">
-        <v-icon size="48" color="medium-emphasis">mdi-clipboard-text-outline</v-icon>
-        <p class="text-medium-emphasis mt-2">Noch keine Ergebnisse vorhanden.</p>
-        <v-btn color="primary" class="mt-4" @click="openSubmitDialog(disciplines[0].key)">
-          Ersten Versuch einreichen
-        </v-btn>
-      </v-col>
-    </v-row>
 
     <!-- ── Submit dialog ───────────────────────────────────────── -->
     <v-dialog v-model="submitDialog.open" max-width="440">
@@ -453,3 +535,14 @@ function ratingColor(rating: string): string {
   return map[rating] ?? 'grey';
 }
 </script>
+
+<style scoped>
+.year-col {
+  min-width: 90px;
+}
+
+.year-summary-row {
+  background: rgba(99, 102, 241, 0.05);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+</style>
