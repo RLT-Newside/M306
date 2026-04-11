@@ -97,14 +97,50 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRequest } from 'alova/client';
-import { getLeaderboard } from '@/api/alovaMethods/fitnessCheck';
-import type { LeaderboardDiscipline, LeaderboardEntry } from '@/models/sportsTest/leaderboard';
+import { ref } from 'vue';
+// import { useRequest } from 'alova/client';
+// import { getLeaderboard } from '@/api/alovaMethods/fitnessCheck';
+import type { LeaderboardDiscipline, LeaderboardEntry, Leaderboard } from '@/models/sportsTest/leaderboard';
 
 const selectedGender = ref<'male' | 'female'>('male');
 
-const { data: leaderboard, loading, error } = useRequest(getLeaderboard());
+// MOCK: const { data: leaderboard, loading, error } = useRequest(getLeaderboard());
+const loading = ref(false);
+const error = ref(null);
+const leaderboard = ref<Leaderboard>({
+  disciplines: [
+    {
+      discipline: 'CoreStrength',
+      male: { result: 312, momentUtc: '2023-04-12T08:45:00Z', schoolYear: 2022, profession: 'Informatiker EFZ', className: 'IM21a' },
+      female: { result: 245, momentUtc: '2024-03-18T10:10:00Z', schoolYear: 2023, profession: 'Kauffrau EFZ', className: 'KV22b' },
+    },
+    {
+      discipline: 'MedicineBallPush',
+      male: { result: 890, momentUtc: '2024-03-15T09:30:00Z', schoolYear: 2023, profession: 'Informatiker EFZ', className: 'IM22a' },
+      female: { result: 620, momentUtc: '2024-03-15T10:00:00Z', schoolYear: 2023, profession: 'Mediamatikerin EFZ', className: 'MM22a' },
+    },
+    {
+      discipline: 'StandingLongJump',
+      male: { result: 280, momentUtc: '2023-04-11T11:20:00Z', schoolYear: 2022, profession: 'Informatiker EFZ', className: 'IM21b' },
+      female: { result: 215, momentUtc: '2024-03-14T09:00:00Z', schoolYear: 2023, profession: 'Kauffrau EFZ', className: 'KV22a' },
+    },
+    {
+      discipline: 'ShuttleRun',
+      male: { result: 8340, momentUtc: '2024-03-15T11:00:00Z', schoolYear: 2023, profession: 'Informatiker EFZ', className: 'IM22a' },
+      female: { result: 9760, momentUtc: '2023-04-13T08:30:00Z', schoolYear: 2022, profession: 'Kauffrau EFZ', className: 'KV21c' },
+    },
+    {
+      discipline: 'TwelveMinutesRun',
+      male: { result: 45, momentUtc: '2024-03-16T13:00:00Z', schoolYear: 2023, profession: 'Informatiker EFZ', className: 'IM22b' },
+      female: { result: 37, momentUtc: '2024-03-17T13:30:00Z', schoolYear: 2023, profession: 'Mediamatikerin EFZ', className: 'MM22a' },
+    },
+    {
+      discipline: 'OneLegStand',
+      male: { result: 118, momentUtc: '2024-03-18T09:45:00Z', schoolYear: 2023, profession: 'Kaufmann EFZ', className: 'KV22a' },
+      female: { result: 120, momentUtc: '2023-04-10T10:15:00Z', schoolYear: 2022, profession: 'Kauffrau EFZ', className: 'KV21a' },
+    },
+  ],
+});
 
 function entryForGender(discipline: LeaderboardDiscipline): LeaderboardEntry | null {
   return selectedGender.value === 'male' ? discipline.male : discipline.female;

@@ -323,24 +323,24 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { useRequest } from 'alova/client';
-import {
-  getOverview,
-  getDisciplineInfo,
-  submitCoreStrength,
-  submitMedicineBallPush,
-  submitStandingLongJump,
-  submitShuttleRun,
-  submitTwelveMinutesRun,
-  submitOneLegStand,
-} from '@/api/alovaMethods/fitnessCheck';
-import type { BestAttemptResult } from '@/models/sportsTest/myResults';
+// import { useRequest } from 'alova/client';
+// import {
+//   getOverview,
+//   getDisciplineInfo,
+//   submitCoreStrength,
+//   submitMedicineBallPush,
+//   submitStandingLongJump,
+//   submitShuttleRun,
+//   submitTwelveMinutesRun,
+//   submitOneLegStand,
+// } from '@/api/alovaMethods/fitnessCheck';
+import type { BestAttemptResult, YearOverview } from '@/models/sportsTest/myResults';
 import { useNotifications } from '@/composables/useNotifications';
-import { getHttpErrorData } from '@/api/httpError';
-import { useNotificationStore } from '@/stores/notification';
+// import { getHttpErrorData } from '@/api/httpError';
+// import { useNotificationStore } from '@/stores/notification';
 
-const { showSuccess, showError } = useNotifications();
-const notificationStore = useNotificationStore();
+const { showSuccess } = useNotifications();
+// const notificationStore = useNotificationStore();
 
 // ── Disciplines config ──────────────────────────────────────────
 interface DisciplineConfig {
@@ -362,12 +362,156 @@ const disciplines: DisciplineConfig[] = [
 ];
 
 // ── Overview loading ────────────────────────────────────────────
-const {
-  data: overview,
-  loading: overviewLoading,
-  error: overviewError,
-  send: reloadOverview,
-} = useRequest(getOverview());
+// MOCK: const { data: overview, loading: overviewLoading, error: overviewError, send: reloadOverview } = useRequest(getOverview());
+const overviewLoading = ref(false);
+const overviewError = ref(null);
+const overview = ref<YearOverview[]>([
+  {
+    schoolYear: 2024,
+    cohort: {
+      id: 'cohort-1',
+      profession: 'Informatiker EFZ',
+      baccalaureate: false,
+      schoolYear: 2024,
+      firstSchoolYear: 2022,
+      classNameVocationalEducation: 'IM22a',
+      classNameBaccalaureate: null,
+    },
+    bestAttempts: [
+      {
+        userId: 'mock-user-1',
+        cohortId: 'cohort-1',
+        discipline: 'CoreStrength',
+        result: 135,
+        points: 8,
+        momentUtc: '2025-03-10T09:00:00Z',
+        leftFootResult: null,
+        rightFootResult: null,
+      },
+      {
+        userId: 'mock-user-1',
+        cohortId: 'cohort-1',
+        discipline: 'MedicineBallPush',
+        result: 720,
+        points: 9,
+        momentUtc: '2025-03-10T09:15:00Z',
+        leftFootResult: null,
+        rightFootResult: null,
+      },
+      {
+        userId: 'mock-user-1',
+        cohortId: 'cohort-1',
+        discipline: 'StandingLongJump',
+        result: 255,
+        points: 9,
+        momentUtc: '2025-03-10T09:30:00Z',
+        leftFootResult: null,
+        rightFootResult: null,
+      },
+      {
+        userId: 'mock-user-1',
+        cohortId: 'cohort-1',
+        discipline: 'ShuttleRun',
+        result: 9250,
+        points: 7,
+        momentUtc: '2025-03-10T09:45:00Z',
+        leftFootResult: null,
+        rightFootResult: null,
+      },
+      {
+        userId: 'mock-user-1',
+        cohortId: 'cohort-1',
+        discipline: 'OneLegStand',
+        result: 72,
+        points: 8,
+        momentUtc: '2025-03-10T10:00:00Z',
+        leftFootResult: 65,
+        rightFootResult: 72,
+      },
+    ],
+    totalPoints: 41,
+    averagePoints: 8.2,
+    rating: 'UEE',
+  },
+  {
+    schoolYear: 2023,
+    cohort: {
+      id: 'cohort-0',
+      profession: 'Informatiker EFZ',
+      baccalaureate: false,
+      schoolYear: 2023,
+      firstSchoolYear: 2022,
+      classNameVocationalEducation: 'IM22a',
+      classNameBaccalaureate: null,
+    },
+    bestAttempts: [
+      {
+        userId: 'mock-user-1',
+        cohortId: 'cohort-0',
+        discipline: 'CoreStrength',
+        result: 105,
+        points: 6,
+        momentUtc: '2024-03-14T09:00:00Z',
+        leftFootResult: null,
+        rightFootResult: null,
+      },
+      {
+        userId: 'mock-user-1',
+        cohortId: 'cohort-0',
+        discipline: 'MedicineBallPush',
+        result: 680,
+        points: 7,
+        momentUtc: '2024-03-14T09:15:00Z',
+        leftFootResult: null,
+        rightFootResult: null,
+      },
+      {
+        userId: 'mock-user-1',
+        cohortId: 'cohort-0',
+        discipline: 'StandingLongJump',
+        result: 235,
+        points: 7,
+        momentUtc: '2024-03-14T09:30:00Z',
+        leftFootResult: null,
+        rightFootResult: null,
+      },
+      {
+        userId: 'mock-user-1',
+        cohortId: 'cohort-0',
+        discipline: 'ShuttleRun',
+        result: 10100,
+        points: 6,
+        momentUtc: '2024-03-14T09:45:00Z',
+        leftFootResult: null,
+        rightFootResult: null,
+      },
+      {
+        userId: 'mock-user-1',
+        cohortId: 'cohort-0',
+        discipline: 'TwelveMinutesRun',
+        result: 29,
+        points: 6,
+        momentUtc: '2024-03-14T10:00:00Z',
+        leftFootResult: null,
+        rightFootResult: null,
+      },
+      {
+        userId: 'mock-user-1',
+        cohortId: 'cohort-0',
+        discipline: 'OneLegStand',
+        result: 58,
+        points: 6,
+        momentUtc: '2024-03-14T10:15:00Z',
+        leftFootResult: 50,
+        rightFootResult: 58,
+      },
+    ],
+    totalPoints: 38,
+    averagePoints: 6.3,
+    rating: 'EE',
+  },
+]);
+const reloadOverview = async () => { /* MOCK: no-op */ };
 
 const selectedYear = ref<number | null>(null);
 
@@ -415,16 +559,20 @@ async function openSubmitDialog(disciplineKey: string): Promise<void> {
     remainingAttempts: null,
     maxAttempts: null,
   };
-  try {
-    const info = await getDisciplineInfo(disciplineKey).send();
-    submitDialog.value.remainingAttempts = info.remainingAttempts;
-    submitDialog.value.maxAttempts = info.maxAllowedAttempts;
-  } catch {
-    // Non-critical: just hide the banner if it fails
-    submitDialog.value.remainingAttempts = null;
-  } finally {
-    submitDialog.value.loadingInfo = false;
-  }
+  // MOCK: simulate network delay + return fake attempt info
+  await new Promise((r) => setTimeout(r, 400));
+  submitDialog.value.remainingAttempts = 3;
+  submitDialog.value.maxAttempts = 5;
+  submitDialog.value.loadingInfo = false;
+  // try {
+  //   const info = await getDisciplineInfo(disciplineKey).send();
+  //   submitDialog.value.remainingAttempts = info.remainingAttempts;
+  //   submitDialog.value.maxAttempts = info.maxAllowedAttempts;
+  // } catch {
+  //   submitDialog.value.remainingAttempts = null;
+  // } finally {
+  //   submitDialog.value.loadingInfo = false;
+  // }
 }
 
 const isSubmitValid = computed(() => {
@@ -438,50 +586,39 @@ const isSubmitValid = computed(() => {
 });
 
 async function submitAttempt(): Promise<void> {
-  const { disciplineKey, value, foot } = submitDialog.value;
+  const { value } = submitDialog.value;
   if (value === null) return;
 
   submitDialog.value.saving = true;
-  try {
-    switch (disciplineKey) {
-      case 'CoreStrength':
-        await submitCoreStrength(value).send();
-        break;
-      case 'MedicineBallPush':
-        await submitMedicineBallPush(value).send();
-        break;
-      case 'StandingLongJump':
-        await submitStandingLongJump(value).send();
-        break;
-      case 'ShuttleRun':
-        await submitShuttleRun(Math.round(value * 1000)).send();
-        break;
-      case 'TwelveMinutesRun':
-        await submitTwelveMinutesRun(value).send();
-        break;
-      case 'OneLegStand':
-        await submitOneLegStand(value, foot).send();
-        break;
-    }
-    showSuccess('Versuch wurde gespeichert.');
-    submitDialog.value.open = false;
-    await reloadOverview();
-  } catch (err) {
-    const status = (err as { status?: number })?.status;
-    if (status === 400) {
-      const msg = getHttpErrorData<string>(err);
-      notificationStore.showWarning(msg ?? 'Ungültige Eingabe.');
-    } else {
-      showError(err, {
-        notFound: 'Disziplin nicht gefunden.',
-        forbidden: 'Keine Berechtigung.',
-        conflict: 'Konflikt beim Speichern.',
-        fallback: 'Versuch konnte nicht gespeichert werden.',
-      });
-    }
-  } finally {
-    submitDialog.value.saving = false;
-  }
+  // MOCK: simulate submission delay
+  await new Promise((r) => setTimeout(r, 600));
+  showSuccess('Versuch wurde gespeichert.');
+  submitDialog.value.open = false;
+  submitDialog.value.saving = false;
+
+  // try {
+  //   switch (disciplineKey) {
+  //     case 'CoreStrength':      await submitCoreStrength(value).send(); break;
+  //     case 'MedicineBallPush':  await submitMedicineBallPush(value).send(); break;
+  //     case 'StandingLongJump':  await submitStandingLongJump(value).send(); break;
+  //     case 'ShuttleRun':        await submitShuttleRun(Math.round(value * 1000)).send(); break;
+  //     case 'TwelveMinutesRun':  await submitTwelveMinutesRun(value).send(); break;
+  //     case 'OneLegStand':       await submitOneLegStand(value, foot).send(); break;
+  //   }
+  //   showSuccess('Versuch wurde gespeichert.');
+  //   submitDialog.value.open = false;
+  //   await reloadOverview();
+  // } catch (err) {
+  //   const status = (err as { status?: number })?.status;
+  //   if (status === 400) {
+  //     const msg = getHttpErrorData<string>(err);
+  //     notificationStore.showWarning(msg ?? 'Ungültige Eingabe.');
+  //   } else {
+  //     showError(err, { ... });
+  //   }
+  // } finally {
+  //   submitDialog.value.saving = false;
+  // }
 }
 
 // ── Helpers ─────────────────────────────────────────────────────

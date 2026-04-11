@@ -288,7 +288,6 @@ const routes: Array<RouteRecordRaw> = [
     path: '/sports-test/my-results',
     name: 'Sports Test My Results',
     component: SportsTestMyResults,
-    meta: { requiresAuthentication: true },
   },
   {
     path: '/:pathMatch(.*)*',
