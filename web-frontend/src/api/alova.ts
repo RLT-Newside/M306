@@ -108,3 +108,14 @@ export const genericAlovaInstance = createAlova({
   },
   cacheFor: null, // disable caching at all
 });
+
+export const fitnessCheckAlova = createAlova({
+  baseURL: import.meta.env.GIBZAPP_API_HOST + '/v2/',
+  statesHook: VueHook,
+  requestAdapter: adapterFetch(),
+  responded: (response) => handleApiResponse(response),
+  beforeRequest(method) {
+    method.config.headers['Content-Type'] = 'application/json';
+  },
+  cacheFor: null, // disable caching at all
+});

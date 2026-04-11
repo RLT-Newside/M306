@@ -16,6 +16,8 @@ public class FitnessCheckDbContext : DbContext
     public virtual DbSet<ResultsCalculation> Results { get; set; }
     public virtual DbSet<Cohort> Cohorts { get; set; }
     public virtual DbSet<BestAttempt> BestAttempts { get; set; }
+    public virtual DbSet<StudentName> StudentNames { get; set; }
+    public virtual DbSet<MissingResultAnnotation> MissingResultAnnotations { get; set; }
 
     public FitnessCheckDbContext() : base()
     {
