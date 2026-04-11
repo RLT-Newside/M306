@@ -1,11 +1,17 @@
 import type { Leaderboard } from '@/models/sportsTest/leaderboard';
 import type { ClassOverview, CohortInfo } from '@/models/sportsTest/classOverview';
 import type { YearOverview } from '@/models/sportsTest/myResults';
+import type { RankedEntry } from '@/models/sportsTest/ranking';
 import { fitnessCheckAlova } from '../alova';
 
 // ── Leaderboard ──────────────────────────────────────────────────────────────
 
 export const getLeaderboard = () => fitnessCheckAlova.Get<Leaderboard>('leaderboard');
+
+export const getRanking = (discipline: string, gender: 'm' | 'f', limit = 10) =>
+  fitnessCheckAlova.Get<RankedEntry[]>(
+    `leaderboard/ranking?discipline=${discipline}&gender=${gender}&limit=${limit}`
+  );
 
 // ── Class overview ───────────────────────────────────────────────────────────
 

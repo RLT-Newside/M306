@@ -69,9 +69,130 @@ public class LeaderboardController(FitnessCheckDbContext _dbContext) : Controlle
     }
 
     /// <summary>
-    /// Queries the discipline-specific attempt table and returns the globally best attempt
-    /// per gender for the given discipline.
+    /// Returns the top N results for a specific discipline and gender, with student names.
     /// </summary>
+    /// <param name="discipline">Discipline name (e.g. TwelveMinutesRun).</param>
+    /// <param name="gender">Gender filter: 'm' or 'f'.</param>
+    /// <param name="limit">Number of entries to return (1–100, default 10).</param>
+    [HttpGet("ranking")]
+    [Authorize]
+    [ProducesResponseType(typeof(IEnumerable<RankedLeaderboardEntryResponseDTO>), 200)]
+    [ProducesResponseType(typeof(string), 400)]
+    [ProducesResponseType(401)]
+    [Produces("application/json")]
+    public async Task<ActionResult<IEnumerable<RankedLeaderboardEntryResponseDTO>>> GetRanking(
+        [FromQuery] string discipline,
+        [FromQuery] char gender = 'm',
+        [FromQuery] int limit = 10)
+    {
+        if (limit < 1 || limit > 100) limit = 10;
+
+        List<(Guid UserId, Guid CohortId, float Result, DateTime MomentUtc)> top;
+
+        top = discipline switch
+        {
+            "CoreStrength" => await GetTopPerUser<CoreStrengthAttempt>(
+                gender, a => (float)a.ResultInSeconds, lowerIsBetter: false, limit),
+            "MedicineBallPush" => await GetTopPerUser<MedicineBallPushAttempt>(
+                gender, a => (float)a.ResultInCentimeters, lowerIsBetter: false, limit),
+            "StandingLongJump" => await GetTopPerUser<StandingLongJumpAttempt>(
+                gender, a => (float)a.ResultInCentimeters, lowerIsBetter: false, limit),
+            "ShuttleRun" => await GetTopPerUser<ShuttleRunAttempt>(
+                gender, a => (float)a.ResultInMilliseconds, lowerIsBetter: true, limit),
+            "TwelveMinutesRun" => await GetTopPerUser<TwelveMinutesRunAttempt>(
+                gender, a => a.ResultInRounds, lowerIsBetter: false, limit),
+            "OneLegStand" => await GetTopOneLegStand(gender, limit),
+            _ => null!
+        };
+
+        if (top is null)
+            return BadRequest($"Unknown discipline '{discipline}'.");
+
+        // Resolve cohorts
+        var cohortIds = top.Select(t => t.CohortId).Distinct().ToList();
+        var cohorts = await _dbContext.Cohorts
+            .Where(c => cohortIds.Contains(c.Id))
+            .ToDictionaryAsync(c => c.Id);
+
+        // Resolve student names
+        var userIds = top.Select(t => t.UserId).Distinct().ToList();
+        var names = await _dbContext.StudentNames
+            .Where(sn => userIds.Contains(sn.UserId))
+            .ToDictionaryAsync(sn => sn.UserId);
+
+        var result = top.Select((entry, index) =>
+        {
+            var displayName = names.TryGetValue(entry.UserId, out var sn)
+                ? $"{sn.FirstName} {sn.LastName}".Trim()
+                : entry.UserId.ToString()[..8] + "…";
+
+            var className = cohorts.TryGetValue(entry.CohortId, out var cohort)
+                ? cohort.ClassNameVocationalEducation
+                : "–";
+
+            return new RankedLeaderboardEntryResponseDTO
+            {
+                Rank = index + 1,
+                Name = displayName,
+                Result = entry.Result,
+                MomentUtc = entry.MomentUtc,
+                SchoolYear = SchoolYearUtils.GetSchoolYearForDate(entry.MomentUtc),
+                ClassName = className
+            };
+        }).ToList();
+
+        return Ok(result);
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────
+
+    private async Task<List<(Guid UserId, Guid CohortId, float Result, DateTime MomentUtc)>> GetTopPerUser<TAttempt>(
+        char gender, Func<TAttempt, float> resultSelector, bool lowerIsBetter, int limit)
+        where TAttempt : DisciplineAttempt
+    {
+        var attempts = await _dbContext.Set<TAttempt>()
+            .Where(a => a.Gender == gender)
+            .ToListAsync();
+
+        var bestPerUser = attempts
+            .GroupBy(a => a.UserId)
+            .Select(g => lowerIsBetter
+                ? g.MinBy(resultSelector)!
+                : g.MaxBy(resultSelector)!)
+            .ToList();
+
+        var sorted = lowerIsBetter
+            ? bestPerUser.OrderBy(resultSelector)
+            : (IEnumerable<TAttempt>)bestPerUser.OrderByDescending(resultSelector);
+
+        return sorted
+            .Take(limit)
+            .Select(a => (a.UserId, a.CohortId, resultSelector(a), a.MomentUtc))
+            .ToList();
+    }
+
+    private async Task<List<(Guid UserId, Guid CohortId, float Result, DateTime MomentUtc)>> GetTopOneLegStand(
+        char gender, int limit)
+    {
+        var bestAttempts = await _dbContext.BestAttempts
+            .Where(ba => ba.Discipline == "OneLegStand")
+            .ToListAsync();
+
+        var userIds = bestAttempts.Select(ba => ba.UserId).Distinct().ToList();
+        var genderMap = await _dbContext.OneLegStandAttempts
+            .Where(a => userIds.Contains(a.UserId))
+            .GroupBy(a => a.UserId)
+            .Select(g => new { UserId = g.Key, Gender = g.First().Gender })
+            .ToDictionaryAsync(x => x.UserId, x => x.Gender);
+
+        return bestAttempts
+            .Where(ba => genderMap.TryGetValue(ba.UserId, out var g) && g == gender)
+            .OrderByDescending(ba => ba.Result)
+            .Take(limit)
+            .Select(ba => (ba.UserId, ba.CohortId, ba.Result, ba.MomentUtc))
+            .ToList();
+    }
+
     private async Task<LeaderboardDisciplineResponseDTO> BuildAttemptLeaderboard<TAttempt>(
         string disciplineName,
         Func<TAttempt, float> resultSelector,
