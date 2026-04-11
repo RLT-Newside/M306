@@ -414,6 +414,13 @@ const {
 
 watch(selectedCohortId, (id) => { if (id) reloadClass(id); });
 
+// Auto-select the first cohort when the list loads
+watch(cohortItems, (items) => {
+  if (items.length > 0 && !selectedCohortId.value) {
+    selectedCohortId.value = items[0].id;
+  }
+});
+
 // Flatten: one row per student × discipline that has a result
 interface FlatEntry {
   userId: string;

@@ -138,7 +138,7 @@
 
       <v-list-item
         router-link
-        :to="{ name: 'Fitness Test' }"
+        :to="{ path: '/fitnesstest' }"
         title="Fitnesstest"
         value="fitnessTest"
       />
