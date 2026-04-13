@@ -6,6 +6,11 @@ namespace FitnessCheck.Data.DTO.Response;
 public class CohortResponseDTO
 {
     /// <summary>
+    /// The unique identifier of the cohort.
+    /// </summary>
+    public required Guid Id { get; set; }
+
+    /// <summary>
     /// The profession of the cohort.
     /// </summary>
     public required string Profession { get; set; }

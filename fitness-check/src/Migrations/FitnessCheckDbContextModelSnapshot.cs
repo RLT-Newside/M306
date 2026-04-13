@@ -97,6 +97,54 @@ namespace FitnessCheck.Migrations
                     b.ToTable("Cohorts");
                 });
 
+            modelBuilder.Entity("FitnessCheck.Data.Entities.StudentName", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("StudentNames");
+                });
+
+            modelBuilder.Entity("FitnessCheck.Data.Entities.MissingResultAnnotation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("CohortId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Discipline")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Annotation")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "CohortId", "Discipline")
+                        .IsUnique();
+
+                    b.ToTable("MissingResultAnnotations");
+                });
+
             modelBuilder.Entity("FitnessCheck.Data.Entities.CoreStrengthAttempt", b =>
                 {
                     b.Property<Guid>("Id")

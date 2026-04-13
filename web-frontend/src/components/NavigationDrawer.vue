@@ -129,6 +129,20 @@
         />
       </v-list-group>
 
+      <v-list-item
+        router-link
+        :to="{ name: 'Sports Test My Results' }"
+        title="Mein Fitnesstest"
+        value="sportsTestMyResults"
+      />
+
+      <v-list-item
+        router-link
+        :to="{ path: '/fitnesstest' }"
+        title="Fitnesstest"
+        value="fitnessTest"
+      />
+
       <v-list-group v-if="userRoles.includes('developer')">
         <template #activator="{ props }">
           <v-list-item

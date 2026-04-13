@@ -38,6 +38,11 @@ const ProfilePictureRequest = () => import('@/pages/profilePicture/ProfilePictur
 const ManualRequestGeneration = () => import('@/pages/profilePicture/ManualRequestGeneration.vue');
 const DevelopmentSender = () => import('@/pages/pushNotification/DevelopmentSender.vue');
 const DevTools = () => import('@/pages/DevTools.vue');
+const SportsTestLeaderboard = () => import('@/pages/sportsTest/leaderboard.vue');
+const SportsTestClassOverview = () => import('@/pages/sportsTest/Class.vue');
+const SportsTestMyResults = () => import('@/pages/sportsTest/MyResults.vue');
+const SportsTestFitnessTest = () => import('@/pages/sportsTest/FitnessTest.vue');
+const SportsTestFitnessTestKlassen = () => import('@/pages/sportsTest/FitnessTestKlassen.vue');
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -268,6 +273,33 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Developer Tools',
     component: DevTools,
     meta: { requiresAuthentication: true, requiredRole: 'developer' },
+  },
+  {
+    path: '/sports-test/leaderboard',
+    name: 'Sports Test Leaderboard',
+    component: SportsTestLeaderboard,
+    meta: { requiresAuthentication: true, requiredRole: 'physicalEducationTeacher' },
+  },
+  {
+    path: '/sports-test/class-overview',
+    name: 'Sports Test Class Overview',
+    component: SportsTestClassOverview,
+    meta: { requiresAuthentication: true, requiredRole: 'physicalEducationTeacher' },
+  },
+  {
+    path: '/sports-test/my-results',
+    name: 'Sports Test My Results',
+    component: SportsTestMyResults,
+  },
+  {
+    path: '/fitnesstest',
+    name: 'Fitness Test',
+    component: SportsTestFitnessTest,
+  },
+  {
+    path: '/fitnesstest/klassen',
+    name: 'Fitness Test Klassen',
+    component: SportsTestFitnessTestKlassen,
   },
   {
     path: '/:pathMatch(.*)*',

@@ -18,7 +18,7 @@ public interface IAttemptService
     /// <param name="userData">Tuple containing userId, username, gender, and cohort.</param>
     /// <param name="foot">The foot (left/right) for OneLegStand, if applicable.</param>
     /// <returns>The created attempt mapped to the response DTO.</returns>
-    Task<TResponse?> AddAttemptAsync<TResultValue, TEntity, TResponse>(TResultValue value, (Guid userId, string username, char gender, Cohort cohort) userData, EFoot? foot = null)
+    Task<TResponse?> AddAttemptAsync<TResultValue, TEntity, TResponse>(TResultValue value, (Guid userId, string username, string firstName, string lastName, char gender, Cohort cohort) userData, EFoot? foot = null)
         where TResultValue : INumber<TResultValue>
         where TEntity : DisciplineAttempt<TResultValue>, new()
         where TResponse : DisciplineAttemptResponseDTO;

@@ -36,16 +36,20 @@ public abstract class AttemptController(
     protected readonly IAttemptService _attemptService = attemptService;
 
     /// <summary>
-    /// Retrieves user data including user ID, username, gender, and cohort information.
+    /// Retrieves user data including user ID, username, first name, last name, gender, and cohort information.
     /// </summary>
-    /// <returns>A tuple containing user ID, username, gender, and cohort.</returns>
-    protected async Task<(Guid, string, char, Cohort)> GetUserDataAsync()
+    /// <returns>A tuple containing user ID, username, first name, last name, gender, and cohort.</returns>
+    protected async Task<(Guid userId, string username, string firstName, string lastName, char gender, Cohort cohort)> GetUserDataAsync()
     {
         var userId = UserClaimsUtils.GetUserId(User);
         var username = UserClaimsUtils.GetUsername(User);
+        var firstName = UserClaimsUtils.GetFirstName(User);
+        var lastName = UserClaimsUtils.GetLastName(User);
         var userData = (
             userId,
             username,
+            firstName,
+            lastName,
             await _genderService.GetGenderAsync(username),
             (await _cohortService.GetCohortAsync(username))!
         );

@@ -20,11 +20,14 @@ public class AttemptService(
     private readonly MaxAllowedAttemptsOptions _maxAllowedAttemptsOptions = maxAllowedAttemptsOptions.Value;
 
     /// <inheritdoc/>
-    public async Task<TResponse?> AddAttemptAsync<TResultValue, TEntity, TResponse>(TResultValue value, (Guid userId, string username, char gender, Cohort cohort) userData, EFoot? foot = null)
+    public async Task<TResponse?> AddAttemptAsync<TResultValue, TEntity, TResponse>(TResultValue value, (Guid userId, string username, string firstName, string lastName, char gender, Cohort cohort) userData, EFoot? foot = null)
         where TResultValue : INumber<TResultValue>
         where TEntity : DisciplineAttempt<TResultValue>, new()
         where TResponse : DisciplineAttemptResponseDTO
     {
+        // Persist the student name so the teacher class overview can display it.
+        await UpsertStudentNameAsync(userData.userId, userData.firstName, userData.lastName);
+
         // Determine the next attempt number for this user/discipline/cohort
         var attemptNumber = GetAttemptNumber<TEntity, TResultValue>(userData.userId, userData.cohort.Id, foot);
 
@@ -272,5 +275,34 @@ public class AttemptService(
         }
 
         return attemptNumber;
+    }
+
+    /// <summary>
+    /// Creates or updates the StudentName record for the given user.
+    /// Only writes when at least one name component is non-empty, so missing
+    /// claims do not overwrite previously stored names.
+    /// </summary>
+    private async Task UpsertStudentNameAsync(Guid userId, string firstName, string lastName)
+    {
+        if (string.IsNullOrWhiteSpace(firstName) && string.IsNullOrWhiteSpace(lastName))
+            return;
+
+        var existing = await _dbContext.StudentNames.FindAsync(userId);
+        if (existing is null)
+        {
+            _dbContext.StudentNames.Add(new FitnessCheck.Data.Entities.StudentName
+            {
+                UserId = userId,
+                FirstName = firstName,
+                LastName = lastName
+            });
+        }
+        else
+        {
+            existing.FirstName = firstName;
+            existing.LastName = lastName;
+        }
+
+        await _dbContext.SaveChangesAsync();
     }
 }
