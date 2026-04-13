@@ -1,8 +1,18 @@
 <template>
   <div class="ft-page">
-    <FitnessHeader />
+    <!-- In-page tab navigation -->
+    <div class="ft-tabs">
+      <router-link class="ft-tab" to="/fitnesstest">
+        <v-icon size="16">mdi-trophy</v-icon>
+        Globale Bestenliste
+      </router-link>
+      <router-link class="ft-tab ft-tab--active" to="/fitnesstest/klassen">
+        <v-icon size="16">mdi-account-group</v-icon>
+        Klassen-Verwaltung
+      </router-link>
+    </div>
 
-    <main class="ft-content">
+    <div class="ft-content">
       <h1 class="ft-page-title">Klassen-Verwaltung</h1>
       <p class="ft-page-sub">Alle Einträge der Klasse verwalten und bearbeiten</p>
 
@@ -64,7 +74,7 @@
           </tbody>
         </table>
       </div>
-    </main>
+    </div>
 
     <!-- Edit dialog -->
     <v-dialog v-model="editDialog.open" max-width="440">
@@ -114,59 +124,25 @@
       <v-card rounded="lg">
         <v-card-title class="pt-5 px-6">Neuer Eintrag</v-card-title>
         <v-card-text class="px-6">
-          <v-text-field
-            v-model="newDialog.studentName"
-            label="Name"
-            variant="outlined"
-            density="comfortable"
-            class="mb-3"
-          />
+          <v-text-field v-model="newDialog.studentName" label="Name" variant="outlined" density="comfortable" class="mb-3" />
           <v-select
             v-model="newDialog.gender"
             :items="[{ title: 'Männlich', value: 'male' }, { title: 'Weiblich', value: 'female' }]"
-            label="Geschlecht"
-            variant="outlined"
-            density="comfortable"
-            class="mb-3"
+            label="Geschlecht" variant="outlined" density="comfortable" class="mb-3"
           />
-          <v-select
-            v-model="newDialog.discipline"
-            :items="allDisciplines"
-            label="Disziplin"
-            variant="outlined"
-            density="comfortable"
-            class="mb-3"
-          />
+          <v-select v-model="newDialog.discipline" :items="allDisciplines" label="Disziplin" variant="outlined" density="comfortable" class="mb-3" />
           <v-text-field
             v-model.number="newDialog.value"
             :label="newDialog.discipline ? `Wert (${unitForDiscipline(newDialog.discipline)})` : 'Wert'"
-            type="number"
-            variant="outlined"
-            density="comfortable"
-            class="mb-3"
+            type="number" variant="outlined" density="comfortable" class="mb-3"
           />
-          <v-text-field
-            v-model="newDialog.date"
-            label="Datum"
-            type="date"
-            variant="outlined"
-            density="comfortable"
-            class="mb-3"
-          />
-          <v-text-field
-            v-model.number="newDialog.points"
-            label="Punkte (0–100)"
-            type="number"
-            variant="outlined"
-            density="comfortable"
-          />
+          <v-text-field v-model="newDialog.date" label="Datum" type="date" variant="outlined" density="comfortable" class="mb-3" />
+          <v-text-field v-model.number="newDialog.points" label="Punkte (0–100)" type="number" variant="outlined" density="comfortable" />
         </v-card-text>
         <v-card-actions class="px-6 pb-5">
           <v-spacer />
           <v-btn variant="text" @click="newDialog.open = false">Abbrechen</v-btn>
-          <v-btn variant="flat" color="primary" :disabled="!newDialogValid" @click="saveNewEntry">
-            Speichern
-          </v-btn>
+          <v-btn variant="flat" color="primary" :disabled="!newDialogValid" @click="saveNewEntry">Speichern</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -175,7 +151,6 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import FitnessHeader from '@/components/FitnessHeader.vue';
 import type { FitnessAttempt } from '@/models/sportsTest/fitnessAttempt';
 import { mockAttempts } from '@/mocks/fitnessAttempts';
 
@@ -192,7 +167,7 @@ const classEntries = computed(() =>
     .sort((a, b) => a.discipline.localeCompare(b.discipline) || b.value - a.value)
 );
 
-// ── Edit ─────────────────────────────────────────────────────────
+// Edit
 const editDialog = ref({ open: false, entry: null as FitnessAttempt | null, value: null as number | null });
 
 function openEditDialog(entry: FitnessAttempt) {
@@ -206,7 +181,7 @@ function saveEdit() {
   editDialog.value.open = false;
 }
 
-// ── Delete ───────────────────────────────────────────────────────
+// Delete
 const deleteDialog = ref({ open: false, entry: null as FitnessAttempt | null });
 
 function openDeleteDialog(entry: FitnessAttempt) {
@@ -219,33 +194,23 @@ function confirmDelete() {
   deleteDialog.value.open = false;
 }
 
-// ── New entry ────────────────────────────────────────────────────
+// New entry
 const newDialog = ref({
-  open: false,
-  studentName: '',
-  gender: 'male' as 'male' | 'female',
-  discipline: '',
-  value: null as number | null,
-  date: new Date().toISOString().slice(0, 10),
-  points: null as number | null,
+  open: false, studentName: '', gender: 'male' as 'male' | 'female',
+  discipline: '', value: null as number | null,
+  date: new Date().toISOString().slice(0, 10), points: null as number | null,
 });
 
 const newDialogValid = computed(() =>
-  !!newDialog.value.studentName &&
-  !!newDialog.value.discipline &&
-  newDialog.value.value !== null &&
-  newDialog.value.points !== null
+  !!newDialog.value.studentName && !!newDialog.value.discipline &&
+  newDialog.value.value !== null && newDialog.value.points !== null
 );
 
 function openNewDialog() {
   newDialog.value = {
-    open: true,
-    studentName: '',
-    gender: 'male',
-    discipline: allDisciplines.value[0] ?? '',
-    value: null,
-    date: new Date().toISOString().slice(0, 10),
-    points: null,
+    open: true, studentName: '', gender: 'male',
+    discipline: allDisciplines.value[0] ?? '', value: null,
+    date: new Date().toISOString().slice(0, 10), points: null,
   };
 }
 
@@ -256,21 +221,13 @@ function saveNewEntry() {
   const month = new Date(d.date).getMonth();
   const schoolYear = month >= 7 ? `${year}/${year + 1}` : `${year - 1}/${year}`;
   attempts.value.push({
-    id: Date.now().toString(),
-    studentName: d.studentName,
-    gender: d.gender,
-    discipline: d.discipline,
-    value: d.value!,
-    unit: unitForDiscipline(d.discipline),
-    date: d.date,
-    schoolYear,
-    classOrProfession: selectedClass.value,
-    points: d.points!,
+    id: Date.now().toString(), studentName: d.studentName, gender: d.gender,
+    discipline: d.discipline, value: d.value!, unit: unitForDiscipline(d.discipline),
+    date: d.date, schoolYear, classOrProfession: selectedClass.value, points: d.points!,
   });
   newDialog.value.open = false;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────
 function unitForDiscipline(discipline: string): string {
   if (discipline === '12-Minutenlauf') return 'Runden';
   if (discipline === 'Standweitsprung' || discipline === 'Rumpfbeuge') return 'cm';
@@ -290,62 +247,101 @@ function formatDate(iso: string): string {
 
 <style scoped>
 .ft-page {
-  min-height: 100vh;
+  min-height: 100%;
   background: #F8FAFC;
 }
 
+/* ── Tab bar ───────────────────────────────────────────────────── */
+.ft-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 16px 24px 0;
+  border-bottom: 1px solid #E2E8F0;
+  background: #fff;
+}
+
+.ft-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748B;
+  text-decoration: none;
+  border-radius: 6px 6px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  transition: all 0.15s;
+  position: relative;
+  bottom: -1px;
+}
+
+.ft-tab:hover {
+  color: #1E293B;
+  background: #F8FAFC;
+}
+
+.ft-tab--active {
+  color: #2563EB;
+  background: #fff;
+  border-color: #E2E8F0;
+  border-bottom-color: #fff;
+  font-weight: 600;
+}
+
+/* ── Content ───────────────────────────────────────────────────── */
 .ft-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 36px 32px 60px;
+  padding: 28px 24px 48px;
 }
 
 .ft-page-title {
-  font-size: 1.75rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: #0F172A;
-  margin: 0 0 6px;
+  margin: 0 0 4px;
 }
 
 .ft-page-sub {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: #64748B;
-  margin: 0 0 28px;
+  margin: 0 0 24px;
 }
 
+/* ── Controls ──────────────────────────────────────────────────── */
 .ft-controls {
   display: flex;
   align-items: flex-end;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
 }
 
 .ft-label {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #374151;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
 .ft-select {
-  padding: 9px 12px;
+  padding: 8px 12px;
   border: 1px solid #D1D5DB;
   border-radius: 6px;
   font-size: 0.875rem;
   color: #1E293B;
   background: #fff;
   cursor: pointer;
-  min-width: 220px;
+  min-width: 200px;
 }
 
 .ft-select--wide {
-  min-width: 280px;
-  max-width: 400px;
+  min-width: 260px;
+  max-width: 380px;
 }
 
 .ft-btn-primary {
-  padding: 9px 20px;
+  padding: 8px 18px;
   background: #2563EB;
   color: #fff;
   border: none;
@@ -359,6 +355,7 @@ function formatDate(iso: string): string {
 
 .ft-btn-primary:hover { background: #1D4ED8; }
 
+/* ── Card / Table ──────────────────────────────────────────────── */
 .ft-card {
   background: #fff;
   border: 1px solid #E2E8F0;
@@ -376,16 +373,16 @@ function formatDate(iso: string): string {
 .ft-table thead tr { border-bottom: 1px solid #E2E8F0; }
 
 .ft-table th {
-  padding: 14px 16px;
+  padding: 12px 16px;
   text-align: left;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #374151;
   white-space: nowrap;
 }
 
 .ft-table td {
-  padding: 14px 16px;
+  padding: 13px 16px;
   color: #1E293B;
   border-bottom: 1px solid #F1F5F9;
 }
@@ -394,7 +391,6 @@ function formatDate(iso: string): string {
 .ft-table tbody tr:hover td { background: #FAFBFC; }
 
 .ft-th-actions { width: 90px; }
-
 .ft-td-name    { font-weight: 500; color: #0F172A; }
 .ft-td-value   { font-weight: 700; color: #0F172A; }
 .ft-td-muted   { color: #64748B; }
@@ -403,11 +399,11 @@ function formatDate(iso: string): string {
 .ft-points-badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  padding: 3px 9px;
   background: #22C55E;
   color: #fff;
   border-radius: 20px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -415,11 +411,11 @@ function formatDate(iso: string): string {
 .ft-note-badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  padding: 3px 9px;
   background: #DBEAFE;
   color: #1E40AF;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -457,7 +453,7 @@ function formatDate(iso: string): string {
 .ft-empty-cell {
   text-align: center;
   color: #94A3B8;
-  padding: 48px 16px !important;
+  padding: 40px 16px !important;
   font-size: 0.9rem;
 }
 </style>

@@ -1,8 +1,18 @@
 <template>
   <div class="ft-page">
-    <FitnessHeader />
+    <!-- In-page tab navigation -->
+    <div class="ft-tabs">
+      <router-link class="ft-tab ft-tab--active" to="/fitnesstest">
+        <v-icon size="16">mdi-trophy</v-icon>
+        Globale Bestenliste
+      </router-link>
+      <router-link class="ft-tab" to="/fitnesstest/klassen">
+        <v-icon size="16">mdi-account-group</v-icon>
+        Klassen-Verwaltung
+      </router-link>
+    </div>
 
-    <main class="ft-content">
+    <div class="ft-content">
       <h1 class="ft-page-title">GIBZ Fitnesstest Bestenliste</h1>
       <p class="ft-page-sub">Die besten Leistungen nach Disziplin und Geschlecht</p>
 
@@ -47,9 +57,7 @@
           <tbody>
             <tr v-for="entry in leaderboardEntries" :key="entry.id">
               <td class="ft-td-rank">
-                <span class="ft-rank-circle" :style="rankCircleStyle(entry.rank)">
-                  {{ entry.rank }}
-                </span>
+                <span class="ft-rank-circle" :style="rankCircleStyle(entry.rank)">{{ entry.rank }}</span>
               </td>
               <td class="ft-td-name">{{ entry.studentName }}</td>
               <td class="ft-td-value">{{ entry.value }} {{ entry.unit }}</td>
@@ -65,13 +73,12 @@
           </tbody>
         </table>
       </div>
-    </main>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import FitnessHeader from '@/components/FitnessHeader.vue';
 import { mockAttempts } from '@/mocks/fitnessAttempts';
 
 const allDisciplines = [...new Set(mockAttempts.map((a) => a.discipline))].sort();
@@ -106,55 +113,93 @@ function rankCircleStyle(rank: number): Record<string, string> {
 
 <style scoped>
 .ft-page {
-  min-height: 100vh;
+  min-height: 100%;
   background: #F8FAFC;
 }
 
+/* ── Tab bar ───────────────────────────────────────────────────── */
+.ft-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 16px 24px 0;
+  border-bottom: 1px solid #E2E8F0;
+  background: #fff;
+}
+
+.ft-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748B;
+  text-decoration: none;
+  border-radius: 6px 6px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  transition: all 0.15s;
+  position: relative;
+  bottom: -1px;
+}
+
+.ft-tab:hover {
+  color: #1E293B;
+  background: #F8FAFC;
+}
+
+.ft-tab--active {
+  color: #2563EB;
+  background: #fff;
+  border-color: #E2E8F0;
+  border-bottom-color: #fff;
+  font-weight: 600;
+}
+
+/* ── Content ───────────────────────────────────────────────────── */
 .ft-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 36px 32px 60px;
+  padding: 28px 24px 48px;
 }
 
 .ft-page-title {
-  font-size: 1.75rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: #0F172A;
-  margin: 0 0 6px;
+  margin: 0 0 4px;
 }
 
 .ft-page-sub {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: #64748B;
-  margin: 0 0 28px;
+  margin: 0 0 24px;
 }
 
+/* ── Filters ───────────────────────────────────────────────────── */
 .ft-filters {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 14px;
+  margin-bottom: 20px;
 }
 
 .ft-filter-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .ft-label {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #374151;
+  letter-spacing: 0.01em;
 }
 
-.ft-gender-group {
-  display: flex;
-}
+.ft-gender-group { display: flex; }
 
 .ft-gender-btn {
-  padding: 8px 20px;
-  font-size: 0.875rem;
+  padding: 7px 18px;
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   border: 1px solid #D1D5DB;
@@ -174,17 +219,18 @@ function rankCircleStyle(rank: number): Record<string, string> {
 }
 
 .ft-select {
-  padding: 9px 12px;
+  padding: 8px 12px;
   border: 1px solid #D1D5DB;
   border-radius: 6px;
   font-size: 0.875rem;
   color: #1E293B;
   background: #fff;
   cursor: pointer;
-  min-width: 220px;
-  max-width: 320px;
+  min-width: 200px;
+  max-width: 300px;
 }
 
+/* ── Card / Table ──────────────────────────────────────────────── */
 .ft-card {
   background: #fff;
   border: 1px solid #E2E8F0;
@@ -202,16 +248,16 @@ function rankCircleStyle(rank: number): Record<string, string> {
 .ft-table thead tr { border-bottom: 1px solid #E2E8F0; }
 
 .ft-table th {
-  padding: 14px 16px;
+  padding: 12px 16px;
   text-align: left;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #374151;
   white-space: nowrap;
 }
 
 .ft-table td {
-  padding: 14px 16px;
+  padding: 13px 16px;
   color: #1E293B;
   border-bottom: 1px solid #F1F5F9;
 }
@@ -219,18 +265,17 @@ function rankCircleStyle(rank: number): Record<string, string> {
 .ft-table tbody tr:last-child td { border-bottom: none; }
 .ft-table tbody tr:hover td { background: #FAFBFC; }
 
-.ft-th-rank { width: 72px; }
-
+.ft-th-rank { width: 68px; }
 .ft-td-rank { text-align: center; }
 
 .ft-rank-circle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
@@ -242,12 +287,11 @@ function rankCircleStyle(rank: number): Record<string, string> {
 .ft-points-badge {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: 4px 10px;
+  padding: 3px 9px;
   background: #22C55E;
   color: #fff;
   border-radius: 20px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -255,12 +299,11 @@ function rankCircleStyle(rank: number): Record<string, string> {
 .ft-note-badge {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: 4px 10px;
+  padding: 3px 9px;
   background: #DBEAFE;
   color: #1E40AF;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -268,7 +311,7 @@ function rankCircleStyle(rank: number): Record<string, string> {
 .ft-empty-cell {
   text-align: center;
   color: #94A3B8;
-  padding: 48px 16px !important;
+  padding: 40px 16px !important;
   font-size: 0.9rem;
 }
 </style>

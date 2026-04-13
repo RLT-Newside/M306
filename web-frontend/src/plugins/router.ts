@@ -295,13 +295,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/fitnesstest',
     name: 'Fitness Test',
     component: SportsTestFitnessTest,
-    meta: { isPublicPage: true },
   },
   {
     path: '/fitnesstest/klassen',
     name: 'Fitness Test Klassen',
     component: SportsTestFitnessTestKlassen,
-    meta: { isPublicPage: true },
   },
   {
     path: '/:pathMatch(.*)*',
