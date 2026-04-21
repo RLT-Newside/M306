@@ -6,7 +6,7 @@
         <v-icon size="16">mdi-trophy</v-icon>
         Globale Bestenliste
       </router-link>
-      <router-link class="ft-tab ft-tab--active" to="/fitnesstest/klassen">
+      <router-link class="ft-tab" to="/fitnesstest/klassen">
         <v-icon size="16">mdi-account-group</v-icon>
         Klassen-Verwaltung
       </router-link>
@@ -34,15 +34,15 @@
         <table class="ft-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Geschlecht</th>
-              <th>Disziplin</th>
-              <th>Wert</th>
-              <th>Punkte</th>
-              <th>Note</th>
-              <th>Datum</th>
-              <th>Schuljahr</th>
-              <th class="ft-th-actions">Aktionen</th>
+              <th scope="col">Name</th>
+              <th scope="col">Geschlecht</th>
+              <th scope="col">Disziplin</th>
+              <th scope="col">Wert</th>
+              <th scope="col">Punkte</th>
+              <th scope="col">Note</th>
+              <th scope="col">Datum</th>
+              <th scope="col">Schuljahr</th>
+              <th class="ft-th-actions" scope="col">Aktionen</th>
             </tr>
           </thead>
           <tbody>
@@ -130,7 +130,7 @@
             :items="[{ title: 'Männlich', value: 'male' }, { title: 'Weiblich', value: 'female' }]"
             label="Geschlecht" variant="outlined" density="comfortable" class="mb-3"
           />
-          <v-select v-model="newDialog.discipline" :items="allDisciplines" label="Disziplin" variant="outlined" density="comfortable" class="mb-3" />
+          <v-select v-model="newDialog.discipline" :items="ALL_DISCIPLINES" label="Disziplin" variant="outlined" density="comfortable" class="mb-3" />
           <v-text-field
             v-model.number="newDialog.value"
             :label="newDialog.discipline ? `Wert (${unitForDiscipline(newDialog.discipline)})` : 'Wert'"
@@ -151,14 +151,20 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import type { FitnessAttempt } from '@/models/sportsTest/fitnessAttempt';
+import type { FitnessAttempt, Discipline } from '@/models/sportsTest/fitnessAttempt';
 import { mockAttempts } from '@/mocks/fitnessAttempts';
+import {
+  ALL_DISCIPLINES,
+  computeNote,
+  formatDate,
+  unitForDiscipline,
+  schoolYearFromDate,
+} from '@/composables/useFitnessUtils';
+import '@/assets/fitnessTest.css';
 
 const attempts = ref<FitnessAttempt[]>([...mockAttempts]);
 
-const allDisciplines = computed(() => [...new Set(attempts.value.map((a) => a.discipline))].sort());
 const allClasses = computed(() => [...new Set(attempts.value.map((a) => a.classOrProfession))].sort());
-
 const selectedClass = ref(allClasses.value[0] ?? '');
 
 const classEntries = computed(() =>
@@ -196,118 +202,54 @@ function confirmDelete() {
 
 // New entry
 const newDialog = ref({
-  open: false, studentName: '', gender: 'male' as 'male' | 'female',
-  discipline: '', value: null as number | null,
-  date: new Date().toISOString().slice(0, 10), points: null as number | null,
+  open: false,
+  studentName: '',
+  gender: 'male' as 'male' | 'female',
+  discipline: ALL_DISCIPLINES[0],
+  value: null as number | null,
+  date: new Date().toISOString().slice(0, 10),
+  points: null as number | null,
 });
 
 const newDialogValid = computed(() =>
-  !!newDialog.value.studentName && !!newDialog.value.discipline &&
-  newDialog.value.value !== null && newDialog.value.points !== null
+  !!newDialog.value.studentName &&
+  !!newDialog.value.discipline &&
+  newDialog.value.value !== null &&
+  newDialog.value.points !== null
 );
 
 function openNewDialog() {
   newDialog.value = {
-    open: true, studentName: '', gender: 'male',
-    discipline: allDisciplines.value[0] ?? '', value: null,
-    date: new Date().toISOString().slice(0, 10), points: null,
+    open: true,
+    studentName: '',
+    gender: 'male',
+    discipline: ALL_DISCIPLINES[0],
+    value: null,
+    date: new Date().toISOString().slice(0, 10),
+    points: null,
   };
 }
 
 function saveNewEntry() {
   if (!newDialogValid.value) return;
   const d = newDialog.value;
-  const year = new Date(d.date).getFullYear();
-  const month = new Date(d.date).getMonth();
-  const schoolYear = month >= 7 ? `${year}/${year + 1}` : `${year - 1}/${year}`;
   attempts.value.push({
-    id: Date.now().toString(), studentName: d.studentName, gender: d.gender,
-    discipline: d.discipline, value: d.value!, unit: unitForDiscipline(d.discipline),
-    date: d.date, schoolYear, classOrProfession: selectedClass.value, points: d.points!,
+    id: Date.now().toString(),
+    studentName: d.studentName,
+    gender: d.gender,
+    discipline: d.discipline as Discipline,
+    value: d.value!,
+    unit: unitForDiscipline(d.discipline as Discipline),
+    date: d.date,
+    schoolYear: schoolYearFromDate(d.date),
+    classOrProfession: selectedClass.value,
+    points: d.points!,
   });
   newDialog.value.open = false;
-}
-
-function unitForDiscipline(discipline: string): string {
-  if (discipline === '12-Minutenlauf') return 'Runden';
-  if (discipline === 'Standweitsprung' || discipline === 'Rumpfbeuge') return 'cm';
-  if (discipline === 'Ballwurf') return 'm';
-  return 'Anzahl';
-}
-
-function computeNote(points: number): string {
-  return (1 + (points / 100) * 5).toFixed(1);
-}
-
-function formatDate(iso: string): string {
-  const [y, m, d] = iso.split('-');
-  return `${d}.${m}.${y}`;
 }
 </script>
 
 <style scoped>
-.ft-page {
-  min-height: 100%;
-  background: #F8FAFC;
-}
-
-/* ── Tab bar ───────────────────────────────────────────────────── */
-.ft-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 16px 24px 0;
-  border-bottom: 1px solid #E2E8F0;
-  background: #fff;
-}
-
-.ft-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 18px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #64748B;
-  text-decoration: none;
-  border-radius: 6px 6px 0 0;
-  border: 1px solid transparent;
-  border-bottom: none;
-  transition: all 0.15s;
-  position: relative;
-  bottom: -1px;
-}
-
-.ft-tab:hover {
-  color: #1E293B;
-  background: #F8FAFC;
-}
-
-.ft-tab--active {
-  color: #2563EB;
-  background: #fff;
-  border-color: #E2E8F0;
-  border-bottom-color: #fff;
-  font-weight: 600;
-}
-
-/* ── Content ───────────────────────────────────────────────────── */
-.ft-content {
-  padding: 28px 24px 48px;
-}
-
-.ft-page-title {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #0F172A;
-  margin: 0 0 4px;
-}
-
-.ft-page-sub {
-  font-size: 0.9rem;
-  color: #64748B;
-  margin: 0 0 24px;
-}
-
 /* ── Controls ──────────────────────────────────────────────────── */
 .ft-controls {
   display: flex;
@@ -315,24 +257,6 @@ function formatDate(iso: string): string {
   gap: 16px;
   margin-bottom: 20px;
   flex-wrap: wrap;
-}
-
-.ft-label {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 5px;
-}
-
-.ft-select {
-  padding: 8px 12px;
-  border: 1px solid #D1D5DB;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  color: #1E293B;
-  background: #fff;
-  cursor: pointer;
-  min-width: 200px;
 }
 
 .ft-select--wide {
@@ -355,71 +279,11 @@ function formatDate(iso: string): string {
 
 .ft-btn-primary:hover { background: #1D4ED8; }
 
-/* ── Card / Table ──────────────────────────────────────────────── */
-.ft-card {
-  background: #fff;
-  border: 1px solid #E2E8F0;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
-}
-
-.ft-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-.ft-table thead tr { border-bottom: 1px solid #E2E8F0; }
-
-.ft-table th {
-  padding: 12px 16px;
-  text-align: left;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #374151;
-  white-space: nowrap;
-}
-
-.ft-table td {
-  padding: 13px 16px;
-  color: #1E293B;
-  border-bottom: 1px solid #F1F5F9;
-}
-
-.ft-table tbody tr:last-child td { border-bottom: none; }
-.ft-table tbody tr:hover td { background: #FAFBFC; }
-
+/* ── Table actions ─────────────────────────────────────────────── */
 .ft-th-actions { width: 90px; }
-.ft-td-name    { font-weight: 500; color: #0F172A; }
-.ft-td-value   { font-weight: 700; color: #0F172A; }
-.ft-td-muted   { color: #64748B; }
 .ft-td-actions { white-space: nowrap; }
 
-.ft-points-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 9px;
-  background: #22C55E;
-  color: #fff;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.ft-note-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 9px;
-  background: #DBEAFE;
-  color: #1E40AF;
-  border-radius: 20px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
+/* ── Gender chip ───────────────────────────────────────────────── */
 .ft-gender-chip {
   display: inline-block;
   padding: 3px 10px;
@@ -431,6 +295,7 @@ function formatDate(iso: string): string {
 .ft-gender-chip--male   { background: #DBEAFE; color: #1D4ED8; }
 .ft-gender-chip--female { background: #FCE7F3; color: #BE185D; }
 
+/* ── Icon buttons ──────────────────────────────────────────────── */
 .ft-icon-btn {
   display: inline-flex;
   align-items: center;
@@ -445,15 +310,8 @@ function formatDate(iso: string): string {
 }
 
 .ft-icon-btn + .ft-icon-btn { margin-left: 4px; }
-.ft-icon-btn--edit   { color: #2563EB; }
-.ft-icon-btn--edit:hover   { background: #EFF6FF; }
-.ft-icon-btn--delete { color: #DC2626; }
-.ft-icon-btn--delete:hover { background: #FEF2F2; }
-
-.ft-empty-cell {
-  text-align: center;
-  color: #94A3B8;
-  padding: 40px 16px !important;
-  font-size: 0.9rem;
-}
+.ft-icon-btn--edit          { color: #2563EB; }
+.ft-icon-btn--edit:hover    { background: #EFF6FF; }
+.ft-icon-btn--delete        { color: #DC2626; }
+.ft-icon-btn--delete:hover  { background: #FEF2F2; }
 </style>
