@@ -1,6 +1,5 @@
 <template>
   <div class="ft-page">
-    <!-- In-page tab navigation -->
     <div class="ft-tabs">
       <router-link class="ft-tab ft-tab--active" to="/fitnesstest">
         <v-icon size="16">mdi-trophy</v-icon>
@@ -16,7 +15,6 @@
       <h1 class="ft-page-title">GIBZ Fitnesstest Bestenliste</h1>
       <p class="ft-page-sub">Die besten Leistungen nach Disziplin und Geschlecht</p>
 
-      <!-- Filters -->
       <div class="ft-filters">
         <div class="ft-filter-item">
           <span class="ft-label">Geschlecht</span>
@@ -34,12 +32,11 @@
         <div class="ft-filter-item">
           <span class="ft-label">Disziplin</span>
           <select v-model="rankDiscipline" class="ft-select">
-            <option v-for="d in allDisciplines" :key="d" :value="d">{{ d }}</option>
+            <option v-for="d in DISCIPLINES" :key="d" :value="d">{{ d }}</option>
           </select>
         </div>
       </div>
 
-      <!-- Leaderboard table -->
       <div class="ft-card">
         <table class="ft-table">
           <thead>
@@ -48,7 +45,7 @@
               <th>Name</th>
               <th>Wert</th>
               <th>Punkte</th>
-              <th>Note</th>
+              <th>Bewertung</th>
               <th>Datum</th>
               <th>Schuljahr</th>
               <th>Klasse</th>
@@ -60,9 +57,9 @@
                 <span class="ft-rank-circle" :style="rankCircleStyle(entry.rank)">{{ entry.rank }}</span>
               </td>
               <td class="ft-td-name">{{ entry.studentName }}</td>
-              <td class="ft-td-value">{{ entry.value }} {{ entry.unit }}</td>
+              <td class="ft-td-value">{{ formatValue(entry) }}</td>
               <td><span class="ft-points-badge">{{ entry.points }} Pkt</span></td>
-              <td><span class="ft-note-badge">{{ computeNote(entry.points) }}</span></td>
+              <td><span :class="['ft-grade-badge', 'ft-grade-badge--' + entry.grade.toLowerCase()]">{{ entry.grade }}</span></td>
               <td class="ft-td-muted">{{ formatDate(entry.date) }}</td>
               <td class="ft-td-muted">{{ entry.schoolYear }}</td>
               <td class="ft-td-class">{{ entry.classOrProfession }}</td>
@@ -80,22 +77,35 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { mockAttempts } from '@/mocks/fitnessAttempts';
-
-const allDisciplines = [...new Set(mockAttempts.map((a) => a.discipline))].sort();
+import { calculatePoints, getGrade, DISCIPLINES, getDisciplineConfig } from '@/utils/fitnessCalculation';
 
 const rankGender = ref<'male' | 'female'>('male');
-const rankDiscipline = ref(allDisciplines[0] ?? '');
+const rankDiscipline = ref(DISCIPLINES[0]);
 
-const leaderboardEntries = computed(() =>
-  mockAttempts
-    .filter((a) => a.discipline === rankDiscipline.value && a.gender === rankGender.value)
-    .sort((a, b) => b.value - a.value)
+const leaderboardEntries = computed(() => {
+  const config = getDisciplineConfig(rankDiscipline.value);
+  if (!config) return [];
+
+  return mockAttempts
+    .filter((a) => a.discipline === rankDiscipline.value && a.gender === rankGender.value && !a.annotation)
+    .map((a) => {
+      const points = calculatePoints(a.discipline, a.gender, a.value);
+      return { ...a, points, grade: getGrade(points) };
+    })
+    .sort((a, b) => b.points - a.points || b.value - a.value)
     .slice(0, 10)
-    .map((a, i) => ({ ...a, rank: i + 1 }))
-);
+    .map((a, i) => ({ ...a, rank: i + 1 }));
+});
 
-function computeNote(points: number): string {
-  return (1 + (points / 100) * 5).toFixed(1);
+function formatValue(entry: { value: number; unit: string; discipline: string }): string {
+  const config = getDisciplineConfig(entry.discipline);
+  if (config?.key === 'MedicineBallPush') {
+    return `${(entry.value / 100).toFixed(2)} m`;
+  }
+  if (config?.key === 'ShuttleRun') {
+    return `${(entry.value / 1000).toFixed(2)} s`;
+  }
+  return `${entry.value} ${entry.unit}`;
 }
 
 function formatDate(iso: string): string {
@@ -117,7 +127,6 @@ function rankCircleStyle(rank: number): Record<string, string> {
   background: #F8FAFC;
 }
 
-/* ── Tab bar ───────────────────────────────────────────────────── */
 .ft-tabs {
   display: flex;
   gap: 4px;
@@ -156,7 +165,6 @@ function rankCircleStyle(rank: number): Record<string, string> {
   font-weight: 600;
 }
 
-/* ── Content ───────────────────────────────────────────────────── */
 .ft-content {
   padding: 28px 24px 48px;
 }
@@ -174,7 +182,6 @@ function rankCircleStyle(rank: number): Record<string, string> {
   margin: 0 0 24px;
 }
 
-/* ── Filters ───────────────────────────────────────────────────── */
 .ft-filters {
   display: flex;
   flex-direction: column;
@@ -230,7 +237,6 @@ function rankCircleStyle(rank: number): Record<string, string> {
   max-width: 300px;
 }
 
-/* ── Card / Table ──────────────────────────────────────────────── */
 .ft-card {
   background: #fff;
   border: 1px solid #E2E8F0;
@@ -296,17 +302,20 @@ function rankCircleStyle(rank: number): Record<string, string> {
   white-space: nowrap;
 }
 
-.ft-note-badge {
+.ft-grade-badge {
   display: inline-flex;
   align-items: center;
   padding: 3px 9px;
-  background: #DBEAFE;
-  color: #1E40AF;
   border-radius: 20px;
   font-size: 0.78rem;
   font-weight: 600;
   white-space: nowrap;
 }
+
+.ft-grade-badge--te  { background: #FEE2E2; color: #991B1B; }
+.ft-grade-badge--ee  { background: #DBEAFE; color: #1E40AF; }
+.ft-grade-badge--uee { background: #D1FAE5; color: #065F46; }
+.ft-grade-badge--ued { background: #FCD34D; color: #78350F; }
 
 .ft-empty-cell {
   text-align: center;

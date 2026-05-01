@@ -129,19 +129,32 @@
         />
       </v-list-group>
 
-      <v-list-item
-        router-link
-        :to="{ name: 'Sports Test My Results' }"
-        title="Mein Fitnesstest"
-        value="sportsTestMyResults"
-      />
 
-      <v-list-item
-        router-link
-        :to="{ path: '/fitnesstest' }"
-        title="Fitnesstest"
-        value="fitnessTest"
-      />
+      <!-- TODO: uncomment role check for production -->
+      <!-- v-if="userRoles.includes('physicalEducationTeacher')" -->
+      <v-list-group>
+        <template #activator="{ props }">
+          <v-list-item
+            v-bind="props"
+            title="Fitnesstest"
+            value="fitnessTest"
+          />
+        </template>
+
+        <v-list-item
+          router-link
+          :to="{ path: '/fitnesstest' }"
+          title="Bestenliste"
+          value="fitnessTestBestenliste"
+        />
+
+        <v-list-item
+          router-link
+          :to="{ path: '/fitnesstest/klassen' }"
+          title="Klassen-Verwaltung"
+          value="fitnessTestKlassen"
+        />
+      </v-list-group>
 
       <v-list-group v-if="userRoles.includes('developer')">
         <template #activator="{ props }">

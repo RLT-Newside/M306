@@ -1,6 +1,5 @@
 <template>
   <div class="ft-page">
-    <!-- In-page tab navigation -->
     <div class="ft-tabs">
       <router-link class="ft-tab" to="/fitnesstest">
         <v-icon size="16">mdi-trophy</v-icon>
@@ -14,9 +13,8 @@
 
     <div class="ft-content">
       <h1 class="ft-page-title">Klassen-Verwaltung</h1>
-      <p class="ft-page-sub">Alle Einträge der Klasse verwalten und bearbeiten</p>
+      <p class="ft-page-sub">Ergebnisse der Klasse verwalten und bearbeiten</p>
 
-      <!-- Controls -->
       <div class="ft-controls">
         <div>
           <div class="ft-label">Klasse auswählen</div>
@@ -24,55 +22,81 @@
             <option v-for="c in allClasses" :key="c" :value="c">{{ c }}</option>
           </select>
         </div>
-        <button class="ft-btn-primary" @click="openNewDialog">
-          + &nbsp;Neuer Eintrag
-        </button>
+        <div>
+          <div class="ft-label">Schuljahr</div>
+          <select v-model="selectedYear" class="ft-select">
+            <option v-for="y in allYears" :key="y" :value="y">{{ y }}</option>
+          </select>
+        </div>
       </div>
 
-      <!-- Class table -->
+      <!-- Class overview table: one row per student, columns per discipline -->
       <div class="ft-card">
-        <table class="ft-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Geschlecht</th>
-              <th>Disziplin</th>
-              <th>Wert</th>
-              <th>Punkte</th>
-              <th>Note</th>
-              <th>Datum</th>
-              <th>Schuljahr</th>
-              <th class="ft-th-actions">Aktionen</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="entry in classEntries" :key="entry.id">
-              <td class="ft-td-name">{{ entry.studentName }}</td>
-              <td>
-                <span :class="['ft-gender-chip', entry.gender === 'male' ? 'ft-gender-chip--male' : 'ft-gender-chip--female']">
-                  {{ entry.gender === 'male' ? 'Männlich' : 'Weiblich' }}
-                </span>
-              </td>
-              <td>{{ entry.discipline }}</td>
-              <td class="ft-td-value">{{ entry.value }} {{ entry.unit }}</td>
-              <td><span class="ft-points-badge">{{ entry.points }} Pkt</span></td>
-              <td><span class="ft-note-badge">{{ computeNote(entry.points) }}</span></td>
-              <td class="ft-td-muted">{{ formatDate(entry.date) }}</td>
-              <td class="ft-td-muted">{{ entry.schoolYear }}</td>
-              <td class="ft-td-actions">
-                <button class="ft-icon-btn ft-icon-btn--edit" title="Bearbeiten" @click="openEditDialog(entry)">
-                  <v-icon size="17">mdi-pencil</v-icon>
-                </button>
-                <button class="ft-icon-btn ft-icon-btn--delete" title="Löschen" @click="openDeleteDialog(entry)">
-                  <v-icon size="17">mdi-delete</v-icon>
-                </button>
-              </td>
-            </tr>
-            <tr v-if="classEntries.length === 0">
-              <td colspan="9" class="ft-empty-cell">Keine Einträge für diese Klasse.</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="ft-table-scroll">
+          <table class="ft-table">
+            <thead>
+              <tr>
+                <th class="ft-th-name">Name</th>
+                <th class="ft-th-gender">G</th>
+                <th v-for="d in DISCIPLINES" :key="d" class="ft-th-disc">
+                  <div class="ft-th-disc-label">{{ shortDiscipline(d) }}</div>
+                  <div class="ft-th-disc-sub">Wert / Pkt</div>
+                </th>
+                <th class="ft-th-total">Total</th>
+                <th class="ft-th-avg">⌀ Pkt</th>
+                <th class="ft-th-note">Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="student in studentRows" :key="student.name">
+                <td class="ft-td-name">{{ student.name }}</td>
+                <td>
+                  <span :class="['ft-gender-chip', student.gender === 'male' ? 'ft-gender-chip--male' : 'ft-gender-chip--female']">
+                    {{ student.gender === 'male' ? 'M' : 'W' }}
+                  </span>
+                </td>
+                <td v-for="d in DISCIPLINES" :key="d" class="ft-td-disc"
+                    @click="openEditDialog(student, d)">
+                  <template v-if="student.results[d]">
+                    <template v-if="student.results[d].annotation">
+                      <span class="ft-annotation">{{ student.results[d].annotation }}</span>
+                    </template>
+                    <template v-else>
+                      <span class="ft-val">{{ formatCellValue(student.results[d]) }}</span>
+                      <span :class="['ft-pts', gradeClass(student.results[d].points)]">{{ student.results[d].points }}</span>
+                    </template>
+                  </template>
+                  <template v-else>
+                    <span class="ft-missing">—</span>
+                  </template>
+                </td>
+                <td class="ft-td-total">{{ student.totalPoints }}</td>
+                <td class="ft-td-avg">{{ student.avgPoints }}</td>
+                <td>
+                  <span class="ft-note-badge">{{ student.note }}</span>
+                </td>
+              </tr>
+              <tr v-if="studentRows.length === 0">
+                <td :colspan="DISCIPLINES.length + 4" class="ft-empty-cell">
+                  Keine Einträge für diese Klasse / Schuljahr.
+                </td>
+              </tr>
+            </tbody>
+            <tfoot v-if="studentRows.length > 0">
+              <tr class="ft-avg-row">
+                <td class="ft-td-name">Klassenschnitt</td>
+                <td></td>
+                <td v-for="d in DISCIPLINES" :key="d" class="ft-td-disc">
+                  <span class="ft-val">{{ classAverages[d]?.avgValue ?? '—' }}</span>
+                  <span class="ft-pts ft-pts--muted">{{ classAverages[d]?.avgPoints ?? '—' }}</span>
+                </td>
+                <td class="ft-td-total">{{ classTotalAvg }}</td>
+                <td class="ft-td-avg">{{ classPointAvg }}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -82,67 +106,32 @@
         <v-card-title class="pt-5 px-6">Ergebnis bearbeiten</v-card-title>
         <v-card-text class="px-6">
           <div class="mb-1 text-body-2 text-medium-emphasis">
-            {{ editDialog.entry?.studentName }} — {{ editDialog.entry?.discipline }}
+            {{ editDialog.studentName }} — {{ editDialog.discipline }}
           </div>
           <v-text-field
             v-model.number="editDialog.value"
-            :label="`Wert (${editDialog.entry?.unit ?? ''})`"
+            :label="`Wert (${editDialog.unit})`"
             type="number"
+            variant="outlined"
+            density="comfortable"
+            class="mt-3"
+          />
+          <div v-if="editDialog.value !== null && editDialog.value > 0" class="mt-1 text-body-2">
+            Punkte: <strong>{{ editDialog.computedPoints }}</strong> · Bewertung: <strong>{{ editDialog.computedGrade }}</strong>
+          </div>
+          <v-text-field
+            v-model="editDialog.annotation"
+            label="Annotation (optional, z.B. verletzt, dispensiert)"
             variant="outlined"
             density="comfortable"
             class="mt-3"
           />
         </v-card-text>
         <v-card-actions class="px-6 pb-5">
+          <v-btn v-if="editDialog.existingId" variant="text" color="error" @click="deleteEntry">Löschen</v-btn>
           <v-spacer />
           <v-btn variant="text" @click="editDialog.open = false">Abbrechen</v-btn>
-          <v-btn variant="flat" color="primary" :disabled="editDialog.value === null" @click="saveEdit">
-            Speichern
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- Delete dialog -->
-    <v-dialog v-model="deleteDialog.open" max-width="400">
-      <v-card rounded="lg">
-        <v-card-title class="pt-5 px-6">Eintrag löschen</v-card-title>
-        <v-card-text class="px-6">
-          Soll der Eintrag von <strong>{{ deleteDialog.entry?.studentName }}</strong>
-          ({{ deleteDialog.entry?.discipline }}) wirklich gelöscht werden?
-        </v-card-text>
-        <v-card-actions class="px-6 pb-5">
-          <v-spacer />
-          <v-btn variant="text" @click="deleteDialog.open = false">Abbrechen</v-btn>
-          <v-btn variant="flat" color="error" @click="confirmDelete">Löschen</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- New entry dialog -->
-    <v-dialog v-model="newDialog.open" max-width="480">
-      <v-card rounded="lg">
-        <v-card-title class="pt-5 px-6">Neuer Eintrag</v-card-title>
-        <v-card-text class="px-6">
-          <v-text-field v-model="newDialog.studentName" label="Name" variant="outlined" density="comfortable" class="mb-3" />
-          <v-select
-            v-model="newDialog.gender"
-            :items="[{ title: 'Männlich', value: 'male' }, { title: 'Weiblich', value: 'female' }]"
-            label="Geschlecht" variant="outlined" density="comfortable" class="mb-3"
-          />
-          <v-select v-model="newDialog.discipline" :items="allDisciplines" label="Disziplin" variant="outlined" density="comfortable" class="mb-3" />
-          <v-text-field
-            v-model.number="newDialog.value"
-            :label="newDialog.discipline ? `Wert (${unitForDiscipline(newDialog.discipline)})` : 'Wert'"
-            type="number" variant="outlined" density="comfortable" class="mb-3"
-          />
-          <v-text-field v-model="newDialog.date" label="Datum" type="date" variant="outlined" density="comfortable" class="mb-3" />
-          <v-text-field v-model.number="newDialog.points" label="Punkte (0–100)" type="number" variant="outlined" density="comfortable" />
-        </v-card-text>
-        <v-card-actions class="px-6 pb-5">
-          <v-spacer />
-          <v-btn variant="text" @click="newDialog.open = false">Abbrechen</v-btn>
-          <v-btn variant="flat" color="primary" :disabled="!newDialogValid" @click="saveNewEntry">Speichern</v-btn>
+          <v-btn variant="flat" color="primary" @click="saveEdit">Speichern</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -150,98 +139,229 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import type { FitnessAttempt } from '@/models/sportsTest/fitnessAttempt';
 import { mockAttempts } from '@/mocks/fitnessAttempts';
+import {
+  calculatePoints,
+  getGrade,
+  computeSwissNote,
+  DISCIPLINES,
+  unitForDiscipline,
+  getDisciplineConfig,
+} from '@/utils/fitnessCalculation';
 
 const attempts = ref<FitnessAttempt[]>([...mockAttempts]);
 
-const allDisciplines = computed(() => [...new Set(attempts.value.map((a) => a.discipline))].sort());
 const allClasses = computed(() => [...new Set(attempts.value.map((a) => a.classOrProfession))].sort());
+const allYears = computed(() => [...new Set(attempts.value.map((a) => a.schoolYear))].sort().reverse());
 
 const selectedClass = ref(allClasses.value[0] ?? '');
+const selectedYear = ref(allYears.value[0] ?? '');
 
-const classEntries = computed(() =>
-  attempts.value
-    .filter((a) => a.classOrProfession === selectedClass.value)
-    .sort((a, b) => a.discipline.localeCompare(b.discipline) || b.value - a.value)
-);
-
-// Edit
-const editDialog = ref({ open: false, entry: null as FitnessAttempt | null, value: null as number | null });
-
-function openEditDialog(entry: FitnessAttempt) {
-  editDialog.value = { open: true, entry, value: entry.value };
+interface StudentResult {
+  attempt: FitnessAttempt;
+  points: number;
+  grade: string;
+  annotation?: string;
 }
 
-function saveEdit() {
-  if (!editDialog.value.entry || editDialog.value.value === null) return;
-  const idx = attempts.value.findIndex((a) => a.id === editDialog.value.entry!.id);
-  if (idx !== -1) attempts.value[idx] = { ...attempts.value[idx], value: editDialog.value.value };
-  editDialog.value.open = false;
+interface StudentRow {
+  name: string;
+  gender: 'male' | 'female';
+  results: Record<string, StudentResult>;
+  totalPoints: number;
+  avgPoints: string;
+  note: string;
 }
 
-// Delete
-const deleteDialog = ref({ open: false, entry: null as FitnessAttempt | null });
+const studentRows = computed<StudentRow[]>(() => {
+  const filtered = attempts.value.filter(
+    (a) => a.classOrProfession === selectedClass.value && a.schoolYear === selectedYear.value
+  );
 
-function openDeleteDialog(entry: FitnessAttempt) {
-  deleteDialog.value = { open: true, entry };
-}
+  const grouped = new Map<string, { gender: 'male' | 'female'; results: Record<string, StudentResult> }>();
+  for (const a of filtered) {
+    if (!grouped.has(a.studentName)) {
+      grouped.set(a.studentName, { gender: a.gender, results: {} });
+    }
+    const points = a.annotation ? 0 : calculatePoints(a.discipline, a.gender, a.value);
+    grouped.get(a.studentName)!.results[a.discipline] = {
+      attempt: a,
+      points,
+      grade: getGrade(points),
+      annotation: a.annotation,
+    };
+  }
 
-function confirmDelete() {
-  if (!deleteDialog.value.entry) return;
-  attempts.value = attempts.value.filter((a) => a.id !== deleteDialog.value.entry!.id);
-  deleteDialog.value.open = false;
-}
-
-// New entry
-const newDialog = ref({
-  open: false, studentName: '', gender: 'male' as 'male' | 'female',
-  discipline: '', value: null as number | null,
-  date: new Date().toISOString().slice(0, 10), points: null as number | null,
+  return [...grouped.entries()]
+    .map(([name, data]) => {
+      const validResults = Object.values(data.results).filter((r) => !r.annotation);
+      const total = validResults.reduce((s, r) => s + r.points, 0);
+      const count = validResults.length || 1;
+      const avg = total / count;
+      return {
+        name,
+        gender: data.gender,
+        results: data.results,
+        totalPoints: total,
+        avgPoints: avg.toFixed(1),
+        note: computeSwissNote(avg),
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 });
 
-const newDialogValid = computed(() =>
-  !!newDialog.value.studentName && !!newDialog.value.discipline &&
-  newDialog.value.value !== null && newDialog.value.points !== null
+const classAverages = computed(() => {
+  const avgs: Record<string, { avgValue: string; avgPoints: string }> = {};
+  for (const d of DISCIPLINES) {
+    const values: number[] = [];
+    const points: number[] = [];
+    for (const s of studentRows.value) {
+      const r = s.results[d];
+      if (r && !r.annotation) {
+        values.push(r.attempt.value);
+        points.push(r.points);
+      }
+    }
+    if (values.length > 0) {
+      const config = getDisciplineConfig(d);
+      let avgVal = values.reduce((a, b) => a + b, 0) / values.length;
+      let formatted: string;
+      if (config?.key === 'MedicineBallPush') {
+        formatted = (avgVal / 100).toFixed(2);
+      } else if (config?.key === 'ShuttleRun') {
+        formatted = (avgVal / 1000).toFixed(2);
+      } else {
+        formatted = avgVal.toFixed(1);
+      }
+      avgs[d] = {
+        avgValue: formatted,
+        avgPoints: (points.reduce((a, b) => a + b, 0) / points.length).toFixed(1),
+      };
+    }
+  }
+  return avgs;
+});
+
+const classTotalAvg = computed(() => {
+  if (studentRows.value.length === 0) return '—';
+  const total = studentRows.value.reduce((s, r) => s + r.totalPoints, 0);
+  return (total / studentRows.value.length).toFixed(1);
+});
+
+const classPointAvg = computed(() => {
+  if (studentRows.value.length === 0) return '—';
+  const total = studentRows.value.reduce((s, r) => s + parseFloat(r.avgPoints), 0);
+  return (total / studentRows.value.length).toFixed(1);
+});
+
+function shortDiscipline(name: string): string {
+  const map: Record<string, string> = {
+    '12-Minutenlauf': '12-Min',
+    'Standweitsprung': 'Weitsp.',
+    'Rumpfkraft': 'Rumpfk.',
+    'Einbeinstand': 'Einbein.',
+    'Shuttle-Run': 'Shuttle',
+    'Medizinballstoss': 'Med.ball',
+  };
+  return map[name] ?? name;
+}
+
+function formatCellValue(result: StudentResult): string {
+  const a = result.attempt;
+  const config = getDisciplineConfig(a.discipline);
+  if (config?.key === 'MedicineBallPush') return (a.value / 100).toFixed(1);
+  if (config?.key === 'ShuttleRun') return (a.value / 1000).toFixed(1);
+  return String(a.value);
+}
+
+function gradeClass(points: number): string {
+  const g = getGrade(points).toLowerCase();
+  return `ft-pts--${g}`;
+}
+
+// Edit dialog
+const editDialog = ref({
+  open: false,
+  studentName: '',
+  discipline: '',
+  gender: 'male' as 'male' | 'female',
+  unit: '',
+  value: null as number | null,
+  annotation: '',
+  existingId: null as string | null,
+  computedPoints: 0,
+  computedGrade: '',
+});
+
+watch(
+  () => editDialog.value.value,
+  (val) => {
+    if (val !== null && val > 0 && !editDialog.value.annotation) {
+      editDialog.value.computedPoints = calculatePoints(
+        editDialog.value.discipline,
+        editDialog.value.gender,
+        val
+      );
+      editDialog.value.computedGrade = getGrade(editDialog.value.computedPoints);
+    } else {
+      editDialog.value.computedPoints = 0;
+      editDialog.value.computedGrade = '';
+    }
+  }
 );
 
-function openNewDialog() {
-  newDialog.value = {
-    open: true, studentName: '', gender: 'male',
-    discipline: allDisciplines.value[0] ?? '', value: null,
-    date: new Date().toISOString().slice(0, 10), points: null,
+function openEditDialog(student: StudentRow, discipline: string) {
+  const existing = student.results[discipline];
+  editDialog.value = {
+    open: true,
+    studentName: student.name,
+    discipline,
+    gender: student.gender,
+    unit: unitForDiscipline(discipline),
+    value: existing ? existing.attempt.value : null,
+    annotation: existing?.annotation ?? '',
+    existingId: existing?.attempt.id ?? null,
+    computedPoints: existing ? existing.points : 0,
+    computedGrade: existing ? existing.grade : '',
   };
 }
 
-function saveNewEntry() {
-  if (!newDialogValid.value) return;
-  const d = newDialog.value;
-  const year = new Date(d.date).getFullYear();
-  const month = new Date(d.date).getMonth();
-  const schoolYear = month >= 7 ? `${year}/${year + 1}` : `${year - 1}/${year}`;
-  attempts.value.push({
-    id: Date.now().toString(), studentName: d.studentName, gender: d.gender,
-    discipline: d.discipline, value: d.value!, unit: unitForDiscipline(d.discipline),
-    date: d.date, schoolYear, classOrProfession: selectedClass.value, points: d.points!,
-  });
-  newDialog.value.open = false;
+function saveEdit() {
+  const d = editDialog.value;
+  if (d.existingId) {
+    const idx = attempts.value.findIndex((a) => a.id === d.existingId);
+    if (idx !== -1) {
+      attempts.value[idx] = {
+        ...attempts.value[idx],
+        value: d.value ?? 0,
+        annotation: d.annotation || undefined,
+      };
+    }
+  } else if (d.value !== null) {
+    const year = selectedYear.value;
+    attempts.value.push({
+      id: Date.now().toString(),
+      studentName: d.studentName,
+      gender: d.gender,
+      discipline: d.discipline,
+      value: d.value,
+      unit: d.unit,
+      date: new Date().toISOString().slice(0, 10),
+      schoolYear: year,
+      classOrProfession: selectedClass.value,
+      annotation: d.annotation || undefined,
+    });
+  }
+  editDialog.value.open = false;
 }
 
-function unitForDiscipline(discipline: string): string {
-  if (discipline === '12-Minutenlauf') return 'Runden';
-  if (discipline === 'Standweitsprung' || discipline === 'Rumpfbeuge') return 'cm';
-  if (discipline === 'Ballwurf') return 'm';
-  return 'Anzahl';
-}
-
-function computeNote(points: number): string {
-  return (1 + (points / 100) * 5).toFixed(1);
-}
-
-function formatDate(iso: string): string {
-  const [y, m, d] = iso.split('-');
-  return `${d}.${m}.${y}`;
+function deleteEntry() {
+  if (editDialog.value.existingId) {
+    attempts.value = attempts.value.filter((a) => a.id !== editDialog.value.existingId);
+  }
+  editDialog.value.open = false;
 }
 </script>
 
@@ -251,7 +371,6 @@ function formatDate(iso: string): string {
   background: #F8FAFC;
 }
 
-/* ── Tab bar ───────────────────────────────────────────────────── */
 .ft-tabs {
   display: flex;
   gap: 4px;
@@ -290,7 +409,6 @@ function formatDate(iso: string): string {
   font-weight: 600;
 }
 
-/* ── Content ───────────────────────────────────────────────────── */
 .ft-content {
   padding: 28px 24px 48px;
 }
@@ -308,7 +426,6 @@ function formatDate(iso: string): string {
   margin: 0 0 24px;
 }
 
-/* ── Controls ──────────────────────────────────────────────────── */
 .ft-controls {
   display: flex;
   align-items: flex-end;
@@ -332,30 +449,13 @@ function formatDate(iso: string): string {
   color: #1E293B;
   background: #fff;
   cursor: pointer;
-  min-width: 200px;
+  min-width: 160px;
 }
 
 .ft-select--wide {
   min-width: 260px;
-  max-width: 380px;
 }
 
-.ft-btn-primary {
-  padding: 8px 18px;
-  background: #2563EB;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
-
-.ft-btn-primary:hover { background: #1D4ED8; }
-
-/* ── Card / Table ──────────────────────────────────────────────── */
 .ft-card {
   background: #fff;
   border: 1px solid #E2E8F0;
@@ -364,48 +464,88 @@ function formatDate(iso: string): string {
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
 }
 
+.ft-table-scroll {
+  overflow-x: auto;
+}
+
 .ft-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
 }
 
 .ft-table thead tr { border-bottom: 1px solid #E2E8F0; }
 
 .ft-table th {
-  padding: 12px 16px;
-  text-align: left;
-  font-size: 0.78rem;
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 0.72rem;
   font-weight: 600;
   color: #374151;
   white-space: nowrap;
 }
 
 .ft-table td {
-  padding: 13px 16px;
+  padding: 10px 8px;
   color: #1E293B;
   border-bottom: 1px solid #F1F5F9;
+  text-align: center;
 }
 
 .ft-table tbody tr:last-child td { border-bottom: none; }
 .ft-table tbody tr:hover td { background: #FAFBFC; }
 
-.ft-th-actions { width: 90px; }
-.ft-td-name    { font-weight: 500; color: #0F172A; }
-.ft-td-value   { font-weight: 700; color: #0F172A; }
-.ft-td-muted   { color: #64748B; }
-.ft-td-actions { white-space: nowrap; }
+.ft-th-name { text-align: left; min-width: 140px; }
+.ft-th-gender { width: 36px; }
+.ft-th-disc { min-width: 80px; }
+.ft-th-disc-label { font-size: 0.72rem; }
+.ft-th-disc-sub { font-size: 0.62rem; color: #94A3B8; font-weight: 400; }
+.ft-th-total { width: 55px; }
+.ft-th-avg { width: 55px; }
+.ft-th-note { width: 50px; }
 
-.ft-points-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 9px;
-  background: #22C55E;
-  color: #fff;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
+.ft-td-name { text-align: left; font-weight: 500; color: #0F172A; }
+.ft-td-total { font-weight: 700; color: #0F172A; }
+.ft-td-avg { font-weight: 600; color: #475569; }
+
+.ft-td-disc {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ft-td-disc:hover {
+  background: #EFF6FF !important;
+}
+
+.ft-val {
+  display: block;
+  font-size: 0.78rem;
+  color: #1E293B;
+}
+
+.ft-pts {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 8px;
+  margin-top: 2px;
+}
+
+.ft-pts--te  { background: #FEE2E2; color: #991B1B; }
+.ft-pts--ee  { background: #DBEAFE; color: #1E40AF; }
+.ft-pts--uee { background: #D1FAE5; color: #065F46; }
+.ft-pts--ued { background: #FCD34D; color: #78350F; }
+.ft-pts--muted { background: #F1F5F9; color: #64748B; }
+
+.ft-annotation {
+  font-size: 0.7rem;
+  color: #DC2626;
+  font-style: italic;
+}
+
+.ft-missing {
+  color: #CBD5E1;
 }
 
 .ft-note-badge {
@@ -422,38 +562,26 @@ function formatDate(iso: string): string {
 
 .ft-gender-chip {
   display: inline-block;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 0.78rem;
-  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
 }
 
 .ft-gender-chip--male   { background: #DBEAFE; color: #1D4ED8; }
 .ft-gender-chip--female { background: #FCE7F3; color: #BE185D; }
-
-.ft-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  background: transparent;
-  transition: background 0.15s;
-}
-
-.ft-icon-btn + .ft-icon-btn { margin-left: 4px; }
-.ft-icon-btn--edit   { color: #2563EB; }
-.ft-icon-btn--edit:hover   { background: #EFF6FF; }
-.ft-icon-btn--delete { color: #DC2626; }
-.ft-icon-btn--delete:hover { background: #FEF2F2; }
 
 .ft-empty-cell {
   text-align: center;
   color: #94A3B8;
   padding: 40px 16px !important;
   font-size: 0.9rem;
+}
+
+.ft-avg-row td {
+  background: #F8FAFC;
+  border-top: 2px solid #E2E8F0;
+  font-weight: 600;
+  color: #475569;
 }
 </style>

@@ -8,5 +8,5 @@ export interface FitnessAttempt {
   date: string;
   schoolYear: string;
   classOrProfession: string;
-  points: number;
+  annotation?: string;
 }

@@ -40,7 +40,6 @@ const DevelopmentSender = () => import('@/pages/pushNotification/DevelopmentSend
 const DevTools = () => import('@/pages/DevTools.vue');
 const SportsTestLeaderboard = () => import('@/pages/sportsTest/leaderboard.vue');
 const SportsTestClassOverview = () => import('@/pages/sportsTest/Class.vue');
-const SportsTestMyResults = () => import('@/pages/sportsTest/MyResults.vue');
 const SportsTestFitnessTest = () => import('@/pages/sportsTest/FitnessTest.vue');
 const SportsTestFitnessTestKlassen = () => import('@/pages/sportsTest/FitnessTestKlassen.vue');
 
@@ -287,19 +286,18 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuthentication: true, requiredRole: 'physicalEducationTeacher' },
   },
   {
-    path: '/sports-test/my-results',
-    name: 'Sports Test My Results',
-    component: SportsTestMyResults,
-  },
-  {
     path: '/fitnesstest',
     name: 'Fitness Test',
     component: SportsTestFitnessTest,
+    // TODO: uncomment for production
+    // meta: { requiresAuthentication: true, requiredRole: 'physicalEducationTeacher' },
   },
   {
     path: '/fitnesstest/klassen',
     name: 'Fitness Test Klassen',
     component: SportsTestFitnessTestKlassen,
+    // TODO: uncomment for production
+    // meta: { requiresAuthentication: true, requiredRole: 'physicalEducationTeacher' },
   },
   {
     path: '/:pathMatch(.*)*',
